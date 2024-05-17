@@ -1,0 +1,400 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ------------- AUTH
+model User {
+  id Int @id @default(autoincrement())
+
+  userEntities         UserEntity[]
+  UserEntityEnrollment UserEntityEnrollment[]
+
+  @@map("users")
+}
+
+model UserEntity {
+  id       Int    @id @default(autoincrement())
+  email    String @unique
+  password String
+  name     String
+
+  userId Int
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("user_entities")
+}
+
+model UserEntityEnrollment {
+  id                   Int                  @id @default(autoincrement())
+  email                String
+  token                String
+  invitationStatus     InvitationStatus
+  enrollmentActionType EnrollmentActionType
+  invitationType       InvitationType
+
+  invitationId Int?
+  inviterId    Int?
+
+  inviter User? @relation(fields: [inviterId], references: [id])
+
+  @@map("user_entity_enrollment")
+}
+
+model WorkmatiqInvitation {
+  id Int @id @default(autoincrement())
+
+  projectId Int
+  teamId    Int
+  roleId    Int
+
+  @@map("workmatiq_invitation")
+}
+
+model RoleRoverInvitation {
+  id Int @id @default(autoincrement())
+
+  @@map("rolerover_invitation")
+}
+
+enum EnrollmentActionType {
+  REGISTER
+  INVITATION
+  RELATION
+}
+
+enum InvitationStatus {
+  ACCEPTED
+  REJECTED
+  PENDING
+}
+
+enum InvitationType {
+  DEFAULT
+}
+
+// ------------- HR
+model Corporate {
+  id Int @id @default(autoincrement())
+
+  title         String
+  description   String
+  corporateType CorporateType
+
+  departments Department[]
+
+  @@map("corporates")
+}
+
+model Department {
+  id Int @id @default(autoincrement())
+
+  title          String
+  description    String
+  departmentType DepartmentType
+
+  corporateId Int
+
+  corporate Corporate  @relation(fields: [corporateId], references: [id])
+  employees Employee[]
+
+  @@map("departments")
+}
+
+model Employee {
+  id Int @id @default(autoincrement())
+
+  userId       Int
+  departmentId Int
+
+  department Department @relation(fields: [departmentId], references: [id])
+  
+  @@map("employees")
+}
+
+enum DepartmentType {
+  DEFAULT
+  CUSTOM
+}
+
+enum CorporateType {
+  PERSONAL
+  CORPORATE
+}
+
+// ------------- WORKMATIQ
+model Project {
+  id              Int      @id @default(autoincrement())
+  title           String
+  description     String
+  expectedEnd     DateTime
+  budget          Float?
+  expectedRevenue Float?
+  actualRevenue   Float?
+  expectedBudget  Float?
+  actualBudget    Float?
+
+  creatorId           Int
+  corporateId         Int
+  projectPreferenceId Int @unique
+
+  projectPreference ProjectPreference @relation(fields: [projectPreferenceId], references: [id])
+
+  projectBudgets ProjectBudget[]
+  expenses       Expense[]
+  teams          Team[]
+  members        Member[]
+  workspaces     Workspace[]
+  statusLists    StatusList[]
+
+  @@map("projects")
+}
+
+model ProjectRequest {
+  id              Int                  @id @default(autoincrement())
+  deadline        DateTime?
+  costBudget      Float?
+  timeBudget      String?
+  quote           Float
+  rejectionReason String?
+  requestType     ProjectRequestType
+  requestStatus   ProjectRequestStatus
+  currency        Currency?
+
+  customerId   Int?
+  approvedById Int
+
+  @@map("project_request")
+}
+
+model ProjectBudget {
+  id     Int    @id @default(autoincrement())
+  title  String
+  amount Float
+
+  projectId                Int
+  projectExpenseCategoryId Int?
+
+  project                Project                 @relation(fields: [projectId], references: [id])
+  projectExpenseCategory ProjectExpenseCategory? @relation(fields: [projectExpenseCategoryId], references: [id])
+
+  @@map("project_budget")
+}
+
+model WorkspaceBudget {
+  id     Int    @id @default(autoincrement())
+  title  String
+  amount String
+
+  workspaceId Int?
+
+  workspace Workspace? @relation(fields: [workspaceId], references: [id])
+
+  @@map("workspace_budget")
+}
+
+model Expense {
+  id         Int    @id @default(autoincrement())
+  cost       Float
+  status     String
+  attachment String
+
+  approvedBy               String
+  addedById                String
+  projectId                Int
+  workspaceId              Int?
+  projectExpenseCategoryId Int?
+
+  project                Project                 @relation(fields: [projectId], references: [id])
+  workspace              Workspace?              @relation(fields: [workspaceId], references: [id])
+  projectExpenseCategory ProjectExpenseCategory? @relation(fields: [projectExpenseCategoryId], references: [id])
+
+  @@map("expenses")
+}
+
+model ProjectExpenseCategory {
+  id    Int    @id @default(autoincrement())
+  title String
+
+  projectBudgets ProjectBudget[]
+  expenses       Expense[]
+
+  @@map("project_expense_category")
+}
+
+model ProjectPreference {
+  id       Int      @id @default(autoincrement())
+  currency Currency
+
+  project Project?
+
+  @@map("project_preference")
+}
+
+model Team {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  type        TeamType
+
+  roleId    Int
+  projectId Int
+
+  project     Project      @relation(fields: [projectId], references: [id])
+  members     Member[]
+  invitations Invitation[]
+
+  @@map("teams")
+}
+
+model Invitation {
+  id     Int              @id @default(autoincrement())
+  status InvitationStatus
+
+  teamId       Int
+  roleId       Int
+  invitationId Int @unique
+
+  team   Team     @relation(fields: [teamId], references: [id])
+  Member Member[]
+
+  @@map("invitations")
+}
+
+model Member {
+  id      Int    @id @default(autoincrement())
+  payrate Float?
+
+  userId       Int
+  employeeId   Int?
+  projectId    Int
+  invitationId Int?
+  teamId       Int?
+
+  team            Team?             @relation(fields: [teamId], references: [id])
+  project         Project           @relation(fields: [projectId], references: [id])
+  invitation      Invitation?       @relation(fields: [invitationId], references: [id])
+  workspaceMember WorkspaceMember[]
+
+  @@map("members")
+}
+
+model Workspace {
+  id          Int    @id @default(autoincrement())
+  title       String
+  description String
+  budget      Float
+
+  projectId         Int
+  parentWorkspaceId Int
+  workspaceId       Int?
+
+  expenses         Expense[]
+  worksheets       Worksheet[]
+  workspaceMembers WorkspaceMember[]
+  workspaceBudgets WorkspaceBudget[]
+  project          Project           @relation(fields: [projectId], references: [id])
+  parentWorkspace  Workspace?        @relation("Workspace", fields: [parentWorkspaceId], references: [id])
+  childWorkspaces  Workspace[]       @relation("Workspace")
+  // documents        Document[]
+  // meetings         Meeting[]
+  // whiteboards      Whiteboard[]
+
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id Int @id @default(autoincrement())
+
+  workspaceId Int
+  memberId    Int
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  member    Member    @relation(fields: [memberId], references: [id])
+
+  @@unique([workspaceId, memberId])
+
+  @@map("workspace_members")
+}
+
+model Worksheet {
+  id Int @id @default(autoincrement())
+
+  workspaceId  Int
+  statusListId Int
+
+  workspace  Workspace  @relation(fields: [workspaceId], references: [id])
+  statusList StatusList @relation(fields: [statusListId], references: [id])
+
+  @@map("worksheets")
+}
+
+model StatusList {
+  id        Int @id @default(autoincrement())
+  projectId Int
+
+  project    Project     @relation(fields: [projectId], references: [id])
+  worksheets Worksheet[]
+
+  @@map("status_lists")
+}
+
+enum Currency {
+  EGP
+  USD
+  EURO
+}
+
+enum TeamType {
+  CUSTOM
+  DEFAULT
+}
+
+enum ProjectRequestStatus {
+  APPROVED
+  REJECTED
+}
+
+enum ProjectRequestType {
+  CHANGE_REQUEST
+  INITIAL_REQUEST
+}
+
+// ------------- NOTIFCATION
+model Notification {
+  id      Int    @id @default(autoincrement())
+  content String
+
+  @@map("notifications")
+}
+
+model NotificationRecipient {
+  id Int @id @default(autoincrement())
+
+  @@map("notifcation_recipient")
+}
+
+model Recipient {
+  id     Int    @id @default(autoincrement())
+  status Status
+
+  userId Int
+
+  @@map("recipients")
+}
+
+enum Status {
+  PENDING
+  RECEIVED
+}
