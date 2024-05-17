@@ -1,7 +1,7 @@
-import { IJwtPayload } from '@libs/shared/interfaces';
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
 import * as jwt from 'jsonwebtoken';
+import { IJwtPayload } from 'src/interfaces';
 
 @Injectable()
 export class MountRequestUserMiddleware implements NestMiddleware {
