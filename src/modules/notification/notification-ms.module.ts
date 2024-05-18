@@ -3,11 +3,13 @@ import { EjsAdapter } from '@nestjs-modules/mailer/dist/adapters/ejs.adapter';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { join } from 'path';
+import { DatabaseModule } from '../database/database.module';
 import { NotificationMsController } from './notification-ms.controller';
 import { NotificationMsService } from './notification-ms.service';
 
 @Module({
   imports: [
+    DatabaseModule,
     MailerModule.forRootAsync({
       useFactory: async (config: ConfigService) => ({
         transport: {
@@ -33,6 +35,7 @@ import { NotificationMsService } from './notification-ms.service';
     }),
   ],
   controllers: [NotificationMsController],
-  providers: [NotificationMsService]
+  providers: [NotificationMsService],
+  exports: [NotificationMsService],
 })
 export class NotificationMsModule { }
