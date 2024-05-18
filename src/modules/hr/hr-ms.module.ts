@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
+import { WorkmatiqMsModule } from '../workmatiq/workmatiq-ms.module';
 import { HrMsController } from './hr-ms.controller';
 import { HrMsService } from './hr-ms.service';
 
 @Module({
-  imports: [],
+  imports: [WorkmatiqMsModule],
   controllers: [HrMsController],
   providers: [HrMsService]
 })

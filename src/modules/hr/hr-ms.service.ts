@@ -5,12 +5,15 @@ import { IJwtPayload } from "src/interfaces";
 import { ICreateUserTopic } from "src/interfaces/kafka-topics/auth";
 import { PayloadType } from "src/interfaces/topic.interface";
 import { DatabaseService } from "../database/database.service";
+import { WorkmatiqMsService } from "../workmatiq/workmatiq-ms.service";
 
 @Injectable()
 export class HrMsService {
   constructor(
     private configService: ConfigService,
     private database: DatabaseService,
+
+    private readonly workmatiqMsService: WorkmatiqMsService
   ) { }
 
   async listenToUserCreatedTopic(user: ICreateUserTopic[PayloadType]) {
@@ -42,8 +45,7 @@ export class HrMsService {
       })
     }
 
-
-    // this.kafkaClientService.client.emit(USER_CORPORATE_CREATED_TOPIC, { user, corporate })
+    await this.workmatiqMsService.listenToUserCorporateCreatedTopic(user, corporate)
   }
 
   async listenToReadUserCorporatesTopic(user: IJwtPayload) {

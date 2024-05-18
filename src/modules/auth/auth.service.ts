@@ -8,6 +8,7 @@ import { ISignInDto, ISignUpDto } from 'src/dtos';
 import { IJwtPayload } from 'src/interfaces';
 import { IUser } from 'src/interfaces/base.interface';
 import { DatabaseService } from '../database/database.service';
+import { HrMsService } from '../hr/hr-ms.service';
 
 @Injectable()
 export class AuthService {
@@ -17,6 +18,8 @@ export class AuthService {
     private configService: ConfigService,
     private jwtService: JwtService,
     private database: DatabaseService,
+
+    private readonly hrMsService: HrMsService
   ) { }
 
   async signUp(dto: ISignUpDto): Promise<UserEntity> {
@@ -36,7 +39,7 @@ export class AuthService {
         }
       })
 
-      // this.kafkaClientService.client.emit(USER_CREATED_TOPIC, entity)
+      await this.hrMsService.listenToUserCreatedTopic(entity)
     }
 
     return entity;
