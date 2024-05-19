@@ -1,9 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { CorporateType, DepartmentType } from "@prisma/client";
+import { CorporateType, DepartmentType, UserEntity } from "@prisma/client";
 import { IJwtPayload } from "src/interfaces";
-import { ICreateUserTopic } from "src/interfaces/kafka-topics/auth";
-import { PayloadType } from "src/interfaces/topic.interface";
 import { DatabaseService } from "../database/database.service";
 import { WorkmatiqMsService } from "../workmatiq/workmatiq-ms.service";
 
@@ -16,8 +14,8 @@ export class HrMsService {
     private readonly workmatiqMsService: WorkmatiqMsService
   ) { }
 
-  async listenToUserCreatedTopic(user: ICreateUserTopic[PayloadType]) {
-    const corporateTitle = `${user.email} corporate`;
+  async listenToUserCreatedTopic(userEntity: UserEntity) {
+    const corporateTitle = `${userEntity.email} corporate`;
 
     let corporate = await this.database.corporate.findFirst({
       where: {
@@ -29,23 +27,30 @@ export class HrMsService {
     if (!corporate) {
       corporate = await this.database.corporate.create({
         data: {
-          title: `${user.email} corporate`,
-          description: `${user.email} corporate`,
+          title: `${userEntity.email} corporate`,
+          description: `${userEntity.email} corporate`,
           corporateType: CorporateType.PERSONAL,
         }
       })
 
       const department = await this.database.department.create({
         data: {
-          corporateId: corporate.id,
-          departmentType: DepartmentType.DEFAULT,
           title: 'Custom',
           description: 'Custom department auto created',
+          corporateId: corporate.id,
+          departmentType: DepartmentType.DEFAULT,
+        }
+      })
+
+      const employee = await this.database.employee.create({
+        data: {
+          userId: userEntity.id,
+          departmentId: department.id,
         }
       })
     }
 
-    await this.workmatiqMsService.listenToUserCorporateCreatedTopic(user, corporate)
+    await this.workmatiqMsService.listenToUserCorporateCreatedTopic(userEntity, corporate)
   }
 
   async listenToReadUserCorporatesTopic(user: IJwtPayload) {

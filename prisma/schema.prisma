@@ -47,7 +47,8 @@ model UserEntityEnrollment {
   invitationId Int?
   inviterId    Int?
 
-  inviter User? @relation(fields: [inviterId], references: [id])
+  inviter    User?       @relation(fields: [inviterId], references: [id])
+  invitation Invitation? @relation(fields: [invitationId], references: [id])
 
   @@map("user_entity_enrollment")
 }
@@ -145,11 +146,10 @@ model Project {
   expectedBudget  Float?
   actualBudget    Float?
 
-  creatorId           Int
-  corporateId         Int
-  projectPreferenceId Int @unique
+  creatorId   Int
+  corporateId Int
 
-  projectPreference ProjectPreference @relation(fields: [projectPreferenceId], references: [id])
+  projectPreference ProjectPreference?
 
   projectBudgets ProjectBudget[]
   expenses       Expense[]
@@ -237,7 +237,8 @@ model ProjectPreference {
   id       Int      @id @default(autoincrement())
   currency Currency
 
-  project Project?
+  projectId Int     @unique
+  project   Project @relation(fields: [projectId], references: [id])
 
   @@map("project_preference")
 }
@@ -262,12 +263,13 @@ model Invitation {
   id     Int              @id @default(autoincrement())
   status InvitationStatus
 
-  teamId       Int
-  roleId       Int
-  invitationId Int @unique
+  teamId Int
+  roleId Int
+  // invitationId Int @unique
 
-  team   Team     @relation(fields: [teamId], references: [id])
-  Member Member[]
+  team                 Team                   @relation(fields: [teamId], references: [id])
+  Member               Member[]
+  UserEntityEnrollment UserEntityEnrollment[]
 
   @@map("invitations")
 }

@@ -39,8 +39,9 @@ export class AuthService {
         }
       })
 
-      await this.hrMsService.listenToUserCreatedTopic(entity)
     }
+
+    await this.hrMsService.listenToUserCreatedTopic(entity)
 
     return entity;
   }

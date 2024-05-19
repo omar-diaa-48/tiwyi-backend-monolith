@@ -5,7 +5,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { UserEntity } from "@prisma/client";
 import { Request, Response } from 'express';
 import { CreateUserDto, ISignInDto, ISignUpDto } from 'src/dtos';
-import { AuthGuard as CustomAuthGuard } from 'src/guards/auth.guard';
+import { CustomAuthGuard } from 'src/guards/auth.guard';
 import { IJwtPayload } from "src/interfaces";
 import { GetUser } from '../../guards/get-user.guard';
 import { AuthService } from './auth.service';

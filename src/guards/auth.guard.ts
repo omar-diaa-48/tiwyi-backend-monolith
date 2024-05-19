@@ -6,7 +6,7 @@ import { Observable } from 'rxjs';
 import { IJwtPayload } from 'src/interfaces';
 
 @Injectable()
-export class AuthGuard implements CanActivate {
+export class CustomAuthGuard implements CanActivate {
     constructor(
         private jwtService: JwtService,
         private configService: ConfigService
