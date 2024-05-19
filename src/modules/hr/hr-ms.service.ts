@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { CorporateType, DepartmentType, UserEntity } from "@prisma/client";
+import { CorporateType, DepartmentType } from "@prisma/client";
 import { IJwtPayload } from "src/interfaces";
 import { DatabaseService } from "../database/database.service";
 import { WorkmatiqMsService } from "../workmatiq/workmatiq-ms.service";
@@ -14,7 +14,7 @@ export class HrMsService {
     private readonly workmatiqMsService: WorkmatiqMsService
   ) { }
 
-  async listenToUserCreatedTopic(userEntity: UserEntity) {
+  async listenToUserCreatedTopic(userEntity: IJwtPayload) {
     const corporateTitle = `${userEntity.email} corporate`;
 
     let corporate = await this.database.corporate.findFirst({
@@ -44,7 +44,7 @@ export class HrMsService {
 
       const employee = await this.database.employee.create({
         data: {
-          userId: userEntity.id,
+          userId: userEntity.userEntityId,
           departmentId: department.id,
         }
       })

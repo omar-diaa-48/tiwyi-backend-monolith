@@ -1,7 +1,18 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Get, UseGuards } from '@nestjs/common';
+import { CustomAuthGuard } from 'src/guards/auth.guard';
+import { GetUser } from 'src/guards/get-user.guard';
+import { IJwtPayload } from 'src/interfaces';
 import { WorkmatiqMsService } from './workmatiq-ms.service';
 
-@Controller()
+@Controller('workmatiq')
 export class WorkmatiqMsController {
   constructor(private readonly service: WorkmatiqMsService) { }
+
+  @Get('projects')
+  @UseGuards(CustomAuthGuard)
+  listenToReadUserCorporatesTopic(
+    @GetUser() user: IJwtPayload
+  ) {
+    return this.service.listenToReadUserProjectsTopic(user);
+  }
 }

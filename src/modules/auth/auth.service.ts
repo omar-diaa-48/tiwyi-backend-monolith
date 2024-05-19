@@ -7,6 +7,7 @@ import { Request } from 'express';
 import { ISignInDto, ISignUpDto } from 'src/dtos';
 import { IJwtPayload } from 'src/interfaces';
 import { IUser } from 'src/interfaces/base.interface';
+import { BaseService } from '../base/base.service';
 import { DatabaseService } from '../database/database.service';
 import { HrMsService } from '../hr/hr-ms.service';
 
@@ -19,7 +20,8 @@ export class AuthService {
     private jwtService: JwtService,
     private database: DatabaseService,
 
-    private readonly hrMsService: HrMsService
+    private readonly baseService: BaseService,
+    private readonly hrMsService: HrMsService,
   ) { }
 
   async signUp(dto: ISignUpDto): Promise<UserEntity> {
@@ -41,7 +43,7 @@ export class AuthService {
 
     }
 
-    await this.hrMsService.listenToUserCreatedTopic(entity)
+    await this.hrMsService.listenToUserCreatedTopic(this.baseService.formatJwtPayloadFromUserEntity(entity))
 
     return entity;
   }

@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
+import { IJwtPayload } from "src/interfaces"
 import { ICreateUserCorporateTopic } from "src/interfaces/kafka-topics/hr"
 import { PayloadType } from "src/interfaces/topic.interface"
 import { DatabaseService } from "../database/database.service"
@@ -14,10 +15,10 @@ export class WorkmatiqMsService {
     private projectPreferenceService: ProjectPreferenceService
   ) { }
 
-  async listenToUserCorporateCreatedTopic(user: ICreateUserCorporateTopic[PayloadType]["user"], corporate: ICreateUserCorporateTopic[PayloadType]["corporate"]) {
+  async listenToUserCorporateCreatedTopic(user: IJwtPayload, corporate: ICreateUserCorporateTopic[PayloadType]["corporate"]) {
     let project = await this.database.project.findFirst({
       where: {
-        creatorId: user.id,
+        creatorId: user.userId,
         corporateId: corporate.id,
       }
     })
@@ -27,7 +28,7 @@ export class WorkmatiqMsService {
         data: {
           title: 'Custom',
           description: 'Custom project auto created',
-          creatorId: user.id,
+          creatorId: user.userEntityId,
           corporateId: corporate.id,
           expectedEnd: null,
         }
@@ -35,6 +36,25 @@ export class WorkmatiqMsService {
 
       const projectPreference = await this.database.projectPreference.create({ data: { ...this.projectPreferenceService.generateDefaultItem({ projectId: project.id }) } })
     }
+  }
 
+  async listenToReadUserProjectsTopic(user: IJwtPayload) {
+    const userEmployeeIds = await this.database.employee.findMany({ where: { userId: user.userEntityId }, select: { id: true } })
+
+    return this.database.project.findMany({
+      where: {
+        teams: {
+          every: {
+            members: {
+              every: {
+                employeeId: {
+                  in: userEmployeeIds.map((item) => item.id)
+                }
+              }
+            }
+          }
+        }
+      }
+    })
   }
 }

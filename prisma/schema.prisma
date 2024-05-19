@@ -94,6 +94,7 @@ model Corporate {
   corporateType CorporateType
 
   departments Department[]
+  projects    Project[]
 
   @@map("corporates")
 }
@@ -157,6 +158,7 @@ model Project {
   members        Member[]
   workspaces     Workspace[]
   statusLists    StatusList[]
+  corporate      Corporate       @relation(fields: [corporateId], references: [id])
 
   @@map("projects")
 }
