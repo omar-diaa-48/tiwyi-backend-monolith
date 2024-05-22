@@ -57,4 +57,41 @@ export class WorkmatiqMsService {
       }
     })
   }
+
+  async listenToReadUserWorkspacesTopic(user: IJwtPayload) {
+    const userEmployeeIds = await this.database.employee.findMany({ where: { userId: user.userEntityId }, select: { id: true } })
+
+    const projects = await this.database.project.findMany({
+      where: {
+        teams: {
+          every: {
+            members: {
+              every: {
+                employeeId: {
+                  in: userEmployeeIds.map((item) => item.id)
+                }
+              }
+            }
+          }
+        }
+      },
+      select: {
+        id: true
+      },
+    })
+
+    const workspaces = await this.database.workspace.findMany({
+      where: {
+        projectId: {
+          in: projects.map((project) => project.id)
+        }
+      }
+    })
+
+    return workspaces;
+  }
+
+  async listenToCreateUserWorkspaceTopic(user: IJwtPayload, dto: any) {
+
+  }
 }
