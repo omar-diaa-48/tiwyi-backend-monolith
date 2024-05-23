@@ -138,7 +138,7 @@ export class WorkmatiqMsService {
         },
         workspace: {
           connect: {
-            id: dto.worksheetId
+            id: dto.workspaceId
           }
         }
       }

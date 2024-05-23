@@ -32,4 +32,13 @@ export class WorkmatiqMsController {
   ) {
     return this.service.listenToCreateUserWorkspaceTopic(user, dto);
   }
+
+  @Post('worksheets')
+  @UseGuards(CustomAuthGuard)
+  listenToCreateUserWorksheetTopic(
+    @GetUser() user: IJwtPayload,
+    @Body() dto: any
+  ) {
+    return this.service.listenToCreateUserWorksheetTopic(user, dto);
+  }
 }
