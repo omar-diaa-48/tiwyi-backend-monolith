@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
+import { StatusListType } from "@prisma/client"
 import { IJwtPayload } from "src/interfaces"
 import { ICreateUserCorporateTopic } from "src/interfaces/kafka-topics/hr"
 import { PayloadType } from "src/interfaces/topic.interface"
@@ -103,6 +104,41 @@ export class WorkmatiqMsService {
         project: {
           connect: {
             id: dto.projectId
+          }
+        }
+      }
+    })
+  }
+
+  async listenToCreateUserWorksheetTopic(user: IJwtPayload, dto: any) {
+    let defaultStatusList = await this.database.statusList.findFirst({
+      where: {
+        AND: {
+          projectId: dto.projectId,
+          statusListType: StatusListType.DEFAULT
+        }
+      }
+    })
+
+    if (!defaultStatusList) {
+      defaultStatusList = await this.database.statusList.create({
+        data: {
+          statusListType: StatusListType.DEFAULT,
+          projectId: dto.projectId
+        }
+      })
+    }
+
+    return this.database.worksheet.create({
+      data: {
+        statusList: {
+          connect: {
+            id: defaultStatusList.id
+          }
+        },
+        workspace: {
+          connect: {
+            id: dto.worksheetId
           }
         }
       }
