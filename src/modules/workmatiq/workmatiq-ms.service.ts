@@ -12,7 +12,7 @@ export class WorkmatiqMsService {
     private configService: ConfigService,
     private database: DatabaseService,
 
-    private projectPreferenceService: ProjectPreferenceService
+    private projectPreferenceService: ProjectPreferenceService,
   ) { }
 
   async listenToUserCorporateCreatedTopic(user: IJwtPayload, corporate: ICreateUserCorporateTopic[PayloadType]["corporate"]) {
@@ -92,6 +92,19 @@ export class WorkmatiqMsService {
   }
 
   async listenToCreateUserWorkspaceTopic(user: IJwtPayload, dto: any) {
-
+    return this.database.workspace.create({
+      data: {
+        title: dto.title,
+        description: dto.description,
+        budget: dto.budget,
+        project: {
+          connect: {
+            id: dto.projectId
+          }
+        }
+      }
+    })
   }
+
+  async validateUserProject(user: IJwtPayload, projectId: number) { }
 }

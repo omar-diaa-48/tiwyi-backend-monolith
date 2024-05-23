@@ -301,8 +301,7 @@ model Workspace {
   budget      Float
 
   projectId         Int
-  parentWorkspaceId Int
-  workspaceId       Int?
+  parentWorkspaceId Int?
 
   expenses         Expense[]
   worksheets       Worksheet[]
