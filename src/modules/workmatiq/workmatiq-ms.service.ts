@@ -85,6 +85,9 @@ export class WorkmatiqMsService {
         projectId: {
           in: projects.map((project) => project.id)
         }
+      },
+      include: {
+        worksheets: true
       }
     })
 
