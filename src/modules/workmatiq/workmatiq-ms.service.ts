@@ -125,6 +125,20 @@ export class WorkmatiqMsService {
     })
   }
 
+  async listenToDeleteUserWorkspaceTopic(user: IJwtPayload, id: number) {
+    await this.database.worksheet.deleteMany({
+      where: {
+        workspaceId: id
+      }
+    })
+
+    return this.database.workspace.delete({
+      where: {
+        id
+      },
+    })
+  }
+
   async listenToCreateUserWorksheetTopic(user: IJwtPayload, dto: any) {
     let defaultStatusList = await this.database.statusList.findFirst({
       where: {

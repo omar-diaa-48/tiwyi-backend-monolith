@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, UseGuards } from '@nestjs/common';
 import { CustomAuthGuard } from 'src/guards/auth.guard';
 import { GetUser } from 'src/guards/get-user.guard';
 import { IJwtPayload } from 'src/interfaces';
@@ -31,6 +31,15 @@ export class WorkmatiqMsController {
     @Body() dto: any
   ) {
     return this.service.listenToCreateUserWorkspaceTopic(user, dto);
+  }
+
+  @Delete('workspaces/:id')
+  @UseGuards(CustomAuthGuard)
+  listenToDeleteUserWorkspaceTopic(
+    @GetUser() user: IJwtPayload,
+    @Param("id", ParseIntPipe) id: number
+  ) {
+    return this.service.listenToDeleteUserWorkspaceTopic(user, id);
   }
 
   @Post('worksheets')
