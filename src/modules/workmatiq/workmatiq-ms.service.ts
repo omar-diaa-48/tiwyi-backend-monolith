@@ -180,5 +180,15 @@ export class WorkmatiqMsService {
     })
   }
 
+  async listenToCreateUserWorksheetTaskTopic(user: IJwtPayload, dto: any) {
+    return this.database.task.create({
+      data: {
+        content: dto.content,
+        worksheetId: dto.worksheetId,
+        createdById: user.userEntityId,
+      }
+    })
+  }
+
   async validateUserProject(user: IJwtPayload, projectId: number) { }
 }
