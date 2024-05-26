@@ -19,6 +19,7 @@ model User {
 
   userEntities         UserEntity[]
   UserEntityEnrollment UserEntityEnrollment[]
+  Task                 Task[]
 
   @@map("users")
 }
@@ -338,11 +339,15 @@ model WorkspaceMember {
 model Worksheet {
   id Int @id @default(autoincrement())
 
+  title       String @default("To do")
+  description String @default("")
+
   workspaceId  Int
   statusListId Int
 
   workspace  Workspace  @relation(fields: [workspaceId], references: [id])
   statusList StatusList @relation(fields: [statusListId], references: [id])
+  tasks      Task[]
 
   @@map("worksheets")
 }
@@ -357,6 +362,26 @@ model StatusList {
   worksheets Worksheet[]
 
   @@map("status_lists")
+}
+
+model Task {
+  id Int @id @default(autoincrement())
+
+  content String
+
+  worksheetId     Int
+  createdById     Int
+  categoryId      Int?
+  parentTaskId    Int?
+  dependsOnTaskId Int?
+  dependsOn       Int?
+
+  worksheet      Worksheet @relation(fields: [worksheetId], references: [id])
+  createdBy      User      @relation(fields: [createdById], references: [id])
+  parentTask     Task?     @relation("ParentTask", fields: [parentTaskId], references: [id])
+  dependsOnTask  Task?     @relation("DependsOnTask", fields: [dependsOnTaskId], references: [id])
+  parentTasks    Task[]    @relation("ParentTask")
+  dependentTasks Task[]    @relation("DependsOnTask")
 }
 
 enum Currency {

@@ -55,6 +55,9 @@ export class WorkmatiqMsService {
             }
           }
         }
+      },
+      include: {
+        statusLists: true
       }
     })
   }
@@ -88,7 +91,11 @@ export class WorkmatiqMsService {
         }
       },
       include: {
-        worksheets: true
+        worksheets: {
+          include: {
+            tasks: true
+          }
+        }
       }
     })
 
@@ -104,6 +111,14 @@ export class WorkmatiqMsService {
         project: {
           connect: {
             id: dto.projectId
+          }
+        }
+      },
+      include: {
+        worksheets: {
+          include: {
+            tasks: true,
+            statusList: true
           }
         }
       }
@@ -131,6 +146,8 @@ export class WorkmatiqMsService {
 
     return this.database.worksheet.create({
       data: {
+        title: dto.title,
+        description: dto.description,
         statusList: {
           connect: {
             id: defaultStatusList.id
@@ -141,6 +158,10 @@ export class WorkmatiqMsService {
             id: dto.workspaceId
           }
         }
+      },
+      include: {
+        tasks: true,
+        statusList: true
       }
     })
   }
