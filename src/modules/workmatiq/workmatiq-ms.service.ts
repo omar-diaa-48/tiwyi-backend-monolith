@@ -17,26 +17,67 @@ export class WorkmatiqMsService {
   ) { }
 
   async listenToUserCorporateCreatedTopic(user: IJwtPayload, corporate: ICreateUserCorporateTopic[PayloadType]["corporate"]) {
-    let project = await this.database.project.findFirst({
-      where: {
-        creatorId: user.userId,
-        corporateId: corporate.id,
-      }
-    })
-
-    if (!project) {
-      project = await this.database.project.create({
-        data: {
-          title: 'Custom',
-          description: 'Custom project auto created',
-          creatorId: user.userEntityId,
+    await this.database.$transaction(async (tx) => {
+      let project = await tx.project.findFirst({
+        where: {
+          creatorId: user.userId,
           corporateId: corporate.id,
-          expectedEnd: null,
         }
       })
 
-      const projectPreference = await this.database.projectPreference.create({ data: { ...this.projectPreferenceService.generateDefaultItem({ projectId: project.id }) } })
-    }
+      if (!project) {
+        project = await tx.project.create({
+          data: {
+            title: 'Custom',
+            description: 'Custom project auto created',
+            creatorId: user.userEntityId,
+            corporateId: corporate.id,
+            expectedEnd: null,
+          }
+        })
+
+        await tx.projectPreference.create({ data: { ...this.projectPreferenceService.generateDefaultItem({ projectId: project.id }) } })
+
+        const team = await tx.team.create({
+          data: {
+            title: 'Custom',
+            description: 'Custom team auto created',
+            type: 'CUSTOM',
+            roleId: 1,
+            project: {
+              connect: { id: project.id }
+            }
+          }
+        })
+
+        const employee = await tx.employee.findFirst({
+          where: {
+            userId: user.userEntityId
+          }
+        })
+
+        await tx.member.create({
+          data: {
+            userEntity: {
+              connect: {
+                id: user.userEntityId
+              }
+            },
+            team: {
+              connect: {
+                id: team.id
+              }
+            },
+            project: {
+              connect: {
+                id: project.id
+              }
+            },
+            employeeId: employee.id
+          }
+        })
+      }
+    })
   }
 
   async listenToReadUserProjectsTopic(user: IJwtPayload) {
@@ -44,20 +85,33 @@ export class WorkmatiqMsService {
 
     return this.database.project.findMany({
       where: {
-        teams: {
-          every: {
-            members: {
-              every: {
-                employeeId: {
-                  in: userEmployeeIds.map((item) => item.id)
+        OR: [
+          {
+            teams: {
+              some: {
+                members: {
+                  some: {
+                    employeeId: {
+                      in: userEmployeeIds.map((item) => item.id)
+                    }
+                  }
                 }
               }
             }
+          },
+          {
+            creatorId: user.userEntityId
           }
-        }
+        ]
       },
       include: {
-        statusLists: true
+        statusLists: true,
+        teams: true,
+        _count: {
+          select: {
+            members: true
+          }
+        }
       }
     })
   }
@@ -93,7 +147,17 @@ export class WorkmatiqMsService {
       include: {
         worksheets: {
           include: {
-            tasks: true
+            tasks: true,
+            statusList: true
+          }
+        },
+        workspaceMembers: {
+          include: {
+            member: {
+              include: {
+                userEntity: true
+              }
+            }
           }
         }
       }
@@ -103,26 +167,62 @@ export class WorkmatiqMsService {
   }
 
   async listenToCreateUserWorkspaceTopic(user: IJwtPayload, dto: any) {
-    return this.database.workspace.create({
-      data: {
-        title: dto.title,
-        description: dto.description,
-        budget: dto.budget,
-        project: {
-          connect: {
-            id: dto.projectId
+    const workspace = await this.database.$transaction(async (tx) => {
+      const workspace = await tx.workspace.create({
+        data: {
+          title: dto.title,
+          description: dto.description,
+          budget: dto.budget,
+          project: {
+            connect: {
+              id: dto.projectId
+            }
+          }
+        },
+        include: {
+          worksheets: {
+            include: {
+              tasks: true,
+              statusList: true
+            }
+          },
+          workspaceMembers: {
+            include: {
+              member: {
+                include: {
+                  userEntity: true
+                }
+              }
+            }
           }
         }
-      },
-      include: {
-        worksheets: {
-          include: {
-            tasks: true,
-            statusList: true
+      })
+
+      const member = await tx.member.findFirst({
+        where: {
+          userId: user.userEntityId
+        }
+      })
+
+      const workspaceMember = await tx.workspaceMember.create({
+        data: {
+          member: {
+            connect: {
+              id: member.id
+            }
+          },
+          workspace: {
+            connect: {
+              id: workspace.id
+            }
           }
         }
-      }
+      })
+
+      return workspace
     })
+
+    return workspace;
   }
 
   async listenToDeleteUserWorkspaceTopic(user: IJwtPayload, id: number) {

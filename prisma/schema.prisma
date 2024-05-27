@@ -32,7 +32,8 @@ model UserEntity {
 
   userId Int
 
-  user User @relation(fields: [userId], references: [id])
+  user   User     @relation(fields: [userId], references: [id])
+  Member Member[]
 
   @@map("user_entities")
 }
@@ -292,6 +293,7 @@ model Member {
   invitationId Int?
   teamId       Int?
 
+  userEntity      UserEntity        @relation(fields: [userId], references: [id])
   team            Team?             @relation(fields: [teamId], references: [id])
   project         Project           @relation(fields: [projectId], references: [id])
   invitation      Invitation?       @relation(fields: [invitationId], references: [id])

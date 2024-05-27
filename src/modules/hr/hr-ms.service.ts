@@ -42,7 +42,7 @@ export class HrMsService {
         }
       })
 
-      const employee = await this.database.employee.create({
+      await this.database.employee.create({
         data: {
           userId: userEntity.userEntityId,
           departmentId: department.id,
