@@ -106,7 +106,15 @@ export class WorkmatiqMsService {
       },
       include: {
         statusLists: true,
-        teams: true,
+        teams: {
+          include: {
+            members: {
+              include: {
+                userEntity: true
+              }
+            }
+          }
+        },
         _count: {
           select: {
             members: true
@@ -147,7 +155,15 @@ export class WorkmatiqMsService {
       include: {
         worksheets: {
           include: {
-            tasks: true,
+            tasks: {
+              include: {
+                taskMembers: {
+                  include: {
+                    member: true
+                  }
+                }
+              }
+            },
             statusList: true
           }
         },
@@ -281,13 +297,75 @@ export class WorkmatiqMsService {
   }
 
   async listenToCreateUserWorksheetTaskTopic(user: IJwtPayload, dto: any) {
-    return this.database.task.create({
-      data: {
-        content: dto.content,
-        worksheetId: dto.worksheetId,
-        createdById: user.userEntityId,
-      }
+    const task = await this.database.$transaction(async (tx) => {
+      let task = await tx.task.create({
+        data: {
+          content: dto.content,
+          worksheetId: dto.worksheetId,
+          createdById: user.userEntityId,
+        },
+      })
+
+      await tx.taskMember.createMany({
+        data: (dto.members || []).map((member) => ({ taskId: task.id, memberId: member.id })),
+        skipDuplicates: true,
+      })
+
+      task = await tx.task.findFirst({
+        where: {
+          id: task.id,
+        },
+        include: {
+          taskMembers: {
+            include: {
+              member: true
+            }
+          }
+        }
+      })
+
+      return task;
     })
+
+    return task
+  }
+
+  async listenToPatchUserWorksheetTaskTopic(user: IJwtPayload, id: number, dto: any) {
+    const task = await this.database.$transaction(async (tx) => {
+      let task = await tx.task.findFirstOrThrow({
+        where: {
+          id
+        }
+      })
+
+      let updateObj = {}
+
+      for (const field in dto) {
+        if (field in task) {
+          updateObj[field] = dto[field]
+        }
+      }
+
+      if (Object.keys(updateObj).length > 0) {
+        task = await tx.task.update({
+          where: {
+            id
+          },
+          data: updateObj,
+          include: {
+            taskMembers: {
+              include: {
+                member: true
+              }
+            }
+          }
+        })
+      }
+
+      return task;
+    })
+
+    return task
   }
 
   async validateUserProject(user: IJwtPayload, projectId: number) { }

@@ -298,6 +298,7 @@ model Member {
   project         Project           @relation(fields: [projectId], references: [id])
   invitation      Invitation?       @relation(fields: [invitationId], references: [id])
   workspaceMember WorkspaceMember[]
+  taskMembers     TaskMember[]
 
   @@map("members")
 }
@@ -378,12 +379,25 @@ model Task {
   dependsOnTaskId Int?
   dependsOn       Int?
 
-  worksheet      Worksheet @relation(fields: [worksheetId], references: [id])
-  createdBy      User      @relation(fields: [createdById], references: [id])
-  parentTask     Task?     @relation("ParentTask", fields: [parentTaskId], references: [id])
-  dependsOnTask  Task?     @relation("DependsOnTask", fields: [dependsOnTaskId], references: [id])
-  parentTasks    Task[]    @relation("ParentTask")
-  dependentTasks Task[]    @relation("DependsOnTask")
+  worksheet      Worksheet    @relation(fields: [worksheetId], references: [id])
+  createdBy      User         @relation(fields: [createdById], references: [id])
+  parentTask     Task?        @relation("ParentTask", fields: [parentTaskId], references: [id])
+  dependsOnTask  Task?        @relation("DependsOnTask", fields: [dependsOnTaskId], references: [id])
+  parentTasks    Task[]       @relation("ParentTask")
+  dependentTasks Task[]       @relation("DependsOnTask")
+  taskMembers    TaskMember[]
+}
+
+model TaskMember {
+  id Int @id @default(autoincrement())
+
+  taskId   Int
+  memberId Int
+
+  task   Task   @relation(fields: [taskId], references: [id])
+  member Member @relation(fields: [memberId], references: [id])
+
+  @@map("task_members")
 }
 
 enum Currency {
