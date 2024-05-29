@@ -106,13 +106,10 @@ export class WorkmatiqMsService {
       },
       include: {
         statusLists: true,
-        teams: {
+        teams: true,
+        members: {
           include: {
-            members: {
-              include: {
-                userEntity: true
-              }
-            }
+            userEntity: true
           }
         },
         _count: {
