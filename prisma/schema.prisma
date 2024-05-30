@@ -18,8 +18,7 @@ model User {
   id Int @id @default(autoincrement())
 
   userEntities         UserEntity[]
-  UserEntityEnrollment UserEntityEnrollment[]
-  Task                 Task[]
+  userEntityEnrollment UserEntityEnrollment[]
 
   @@map("users")
 }
@@ -32,8 +31,9 @@ model UserEntity {
 
   userId Int
 
-  user   User     @relation(fields: [userId], references: [id])
-  Member Member[]
+  user    User     @relation(fields: [userId], references: [id])
+  members Member[]
+  tasks   Task[]
 
   @@map("user_entities")
 }
@@ -368,9 +368,9 @@ model StatusList {
 }
 
 model Task {
-  id Int @id @default(autoincrement())
-
-  content String
+  id          Int    @id @default(autoincrement())
+  title       String @default("")
+  description String @default("")
 
   worksheetId     Int
   createdById     Int
@@ -379,13 +379,15 @@ model Task {
   dependsOnTaskId Int?
   dependsOn       Int?
 
-  worksheet      Worksheet    @relation(fields: [worksheetId], references: [id])
-  createdBy      User         @relation(fields: [createdById], references: [id])
-  parentTask     Task?        @relation("ParentTask", fields: [parentTaskId], references: [id])
-  dependsOnTask  Task?        @relation("DependsOnTask", fields: [dependsOnTaskId], references: [id])
-  parentTasks    Task[]       @relation("ParentTask")
-  dependentTasks Task[]       @relation("DependsOnTask")
-  taskMembers    TaskMember[]
+  worksheet     Worksheet     @relation(fields: [worksheetId], references: [id])
+  createdBy     UserEntity    @relation(fields: [createdById], references: [id])
+  parentTask    Task?         @relation("ChildTasks", fields: [parentTaskId], references: [id])
+  dependsOnTask Task?         @relation("DependentTasks", fields: [dependsOnTaskId], references: [id])
+  taskMembers   TaskMember[]
+  taskComments  TaskComment[]
+
+  dependentTasks Task[] @relation("DependentTasks")
+  childTasks     Task[] @relation("ChildTasks")
 }
 
 model TaskMember {
@@ -398,6 +400,17 @@ model TaskMember {
   member Member @relation(fields: [memberId], references: [id])
 
   @@map("task_members")
+}
+
+model TaskComment {
+  id      Int    @id @default(autoincrement())
+  content String
+
+  taskId Int
+
+  task Task @relation(fields: [taskId], references: [id])
+
+  @@map("task_comments")
 }
 
 enum Currency {

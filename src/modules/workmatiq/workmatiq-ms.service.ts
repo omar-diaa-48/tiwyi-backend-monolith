@@ -112,11 +112,6 @@ export class WorkmatiqMsService {
             userEntity: true
           }
         },
-        _count: {
-          select: {
-            members: true
-          }
-        }
       }
     })
   }
@@ -159,7 +154,7 @@ export class WorkmatiqMsService {
                     member: true
                   }
                 }
-              }
+              },
             },
             statusList: true
           }
@@ -297,7 +292,8 @@ export class WorkmatiqMsService {
     const task = await this.database.$transaction(async (tx) => {
       let task = await tx.task.create({
         data: {
-          content: dto.content,
+          title: dto.title,
+          description: dto.description,
           worksheetId: dto.worksheetId,
           createdById: user.userEntityId,
         },
@@ -363,6 +359,43 @@ export class WorkmatiqMsService {
     })
 
     return task
+  }
+
+  async listenToReadUserWorksheetTaskTopic(user: IJwtPayload, id: number) {
+    return this.database.task.findUniqueOrThrow({
+      where: {
+        id
+      },
+      include: {
+        taskComments: true,
+        taskMembers: {
+          include: {
+            member: true
+          }
+        },
+        dependsOnTask: {
+          select: {
+            title: true
+          }
+        },
+        dependentTasks: {
+          select: {
+            _count: true
+          }
+        },
+        parentTask: {
+          select: {
+            title: true
+          }
+        },
+        childTasks: {
+          select: {
+            _count: true
+          }
+        },
+        createdBy: true,
+      }
+    })
   }
 
   async validateUserProject(user: IJwtPayload, projectId: number) { }
