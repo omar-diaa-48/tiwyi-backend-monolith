@@ -10,10 +10,20 @@ export class WorkmatiqMsController {
 
   @Get('projects')
   @UseGuards(CustomAuthGuard)
-  listenToReadUserCorporatesTopic(
+  listenToReadUserProjectsTopic(
     @GetUser() user: IJwtPayload
   ) {
     return this.service.listenToReadUserProjectsTopic(user);
+  }
+
+  @Post('projects/:id/tags')
+  @UseGuards(CustomAuthGuard)
+  listenToCreateUserProjectTagTopic(
+    @GetUser() user: IJwtPayload,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: any
+  ) {
+    return this.service.listenToCreateUserProjectTagTopic(user, id, dto);
   }
 
   @Get('workspaces')

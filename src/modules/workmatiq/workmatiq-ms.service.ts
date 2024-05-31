@@ -117,6 +117,16 @@ export class WorkmatiqMsService {
     })
   }
 
+  async listenToCreateUserProjectTagTopic(user: IJwtPayload, id: number, dto: any) {
+    return this.database.projectTag.create({
+      data: {
+        projectId: id,
+        content: dto.content,
+        color: dto.color,
+      }
+    })
+  }
+
   async listenToReadUserWorkspacesTopic(user: IJwtPayload) {
     const userEmployeeIds = await this.database.employee.findMany({ where: { userId: user.userEntityId }, select: { id: true } })
 
