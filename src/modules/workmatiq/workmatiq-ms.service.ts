@@ -112,6 +112,7 @@ export class WorkmatiqMsService {
             userEntity: true
           }
         },
+        tags: true
       }
     })
   }
@@ -393,6 +394,7 @@ export class WorkmatiqMsService {
             _count: true
           }
         },
+        taskTags: true,
         worksheet: true,
         createdBy: true,
       }

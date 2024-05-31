@@ -166,6 +166,7 @@ model Project {
   workspaces     Workspace[]
   statusLists    StatusList[]
   corporate      Corporate       @relation(fields: [corporateId], references: [id])
+  tags           ProjectTag[]
 
   @@map("projects")
 }
@@ -303,6 +304,31 @@ model Member {
   @@map("members")
 }
 
+model ProjectTag {
+  id      Int    @id @default(autoincrement())
+  content String
+  color   String
+
+  projectId Int
+
+  project  Project   @relation(fields: [projectId], references: [id])
+  taskTags TaskTag[]
+
+  @@map("project_tags")
+}
+
+model TaskTag {
+  id Int @id @default(autoincrement())
+
+  taskId       Int
+  projectTagId Int
+
+  task       Task       @relation(fields: [taskId], references: [id])
+  projectTag ProjectTag @relation(fields: [projectTagId], references: [id])
+
+  @@map("task_tags")
+}
+
 model Workspace {
   id          Int    @id @default(autoincrement())
   title       String
@@ -386,8 +412,9 @@ model Task {
   taskMembers   TaskMember[]
   taskComments  TaskComment[]
 
-  dependentTasks Task[] @relation("DependentTasks")
-  childTasks     Task[] @relation("ChildTasks")
+  dependentTasks Task[]    @relation("DependentTasks")
+  childTasks     Task[]    @relation("ChildTasks")
+  taskTags       TaskTag[]
 }
 
 model TaskMember {
