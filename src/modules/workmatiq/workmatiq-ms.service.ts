@@ -393,6 +393,7 @@ export class WorkmatiqMsService {
             _count: true
           }
         },
+        worksheet: true,
         createdBy: true,
       }
     })

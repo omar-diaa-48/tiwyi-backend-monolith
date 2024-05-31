@@ -60,6 +60,15 @@ export class WorkmatiqMsController {
     return this.service.listenToCreateUserWorksheetTaskTopic(user, dto);
   }
 
+  @Get('tasks/:id')
+  @UseGuards(CustomAuthGuard)
+  listenToReadUserWorksheetTaskTopic(
+    @GetUser() user: IJwtPayload,
+    @Param('id', ParseIntPipe) id: number
+  ) {
+    return this.service.listenToReadUserWorksheetTaskTopic(user, id);
+  }
+
   @Patch('tasks/:id')
   @UseGuards(CustomAuthGuard)
   listenToPatchUserWorksheetTaskTopic(
