@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
-import { StatusListType } from "@prisma/client"
+import { ProjectTag, StatusListType } from "@prisma/client"
 import { IJwtPayload } from "src/interfaces"
 import { ICreateUserCorporateTopic } from "src/interfaces/kafka-topics/hr"
 import { PayloadType } from "src/interfaces/topic.interface"
@@ -355,16 +355,15 @@ export class WorkmatiqMsService {
           where: {
             id
           },
-          data: updateObj,
-          include: {
-            taskMembers: {
-              include: {
-                member: true
-              }
-            }
-          }
+          data: updateObj
         })
       }
+
+      await tx.taskTag.deleteMany({ where: { taskId: task.id } })
+
+      await tx.taskTag.createMany({
+        data: dto.projectTags.map((projectTag: ProjectTag) => ({ taskId: task.id, projectId: projectTag.id }))
+      })
 
       return task;
     })
@@ -404,7 +403,11 @@ export class WorkmatiqMsService {
             _count: true
           }
         },
-        taskTags: true,
+        taskTags: {
+          include: {
+            projectTag: true
+          }
+        },
         worksheet: true,
         createdBy: true,
       }
