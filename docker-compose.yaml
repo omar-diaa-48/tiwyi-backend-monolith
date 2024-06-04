@@ -43,7 +43,24 @@ services:
       - backend
     depends_on:
       - postgres
-      
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    container_name: minio
+    env_file:
+      - .env.docker
+    deploy:
+      restart_policy:
+        condition: on-failure
+    volumes:
+      - minio_data:/data
+    networks:
+      - backend
+    ports:
+      - 9000:9000
+      - 9001:9001
+
 networks:
   backend:
     driver: bridge
@@ -52,3 +69,4 @@ volumes:
   grafana_data:
   postgres_data:
   pgadmin_data:
+  minio_data:
