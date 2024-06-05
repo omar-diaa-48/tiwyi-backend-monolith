@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
-import { ProjectTag, StatusListType } from "@prisma/client"
+import { Member, Prisma, PrismaClient, ProjectTag, StatusListType } from "@prisma/client"
+import { DefaultArgs } from "@prisma/client/runtime/library"
 import { IJwtPayload } from "src/interfaces"
 import { ICreateUserCorporateTopic } from "src/interfaces/kafka-topics/hr"
 import { PayloadType } from "src/interfaces/topic.interface"
@@ -315,6 +316,8 @@ export class WorkmatiqMsService {
         skipDuplicates: true,
       })
 
+      await this.hydrateTask(task.id, { members: dto.members, projectTags: dto.projectTags }, tx)
+
       task = await tx.task.findFirst({
         where: {
           id: task.id,
@@ -359,11 +362,7 @@ export class WorkmatiqMsService {
         })
       }
 
-      await tx.taskTag.deleteMany({ where: { taskId: task.id } })
-
-      await tx.taskTag.createMany({
-        data: dto.projectTags.map((projectTag: ProjectTag) => ({ taskId: task.id, projectId: projectTag.id }))
-      })
+      await this.hydrateTask(task.id, { members: dto.members, projectTags: dto.projectTags }, tx)
 
       return task;
     })
@@ -415,4 +414,26 @@ export class WorkmatiqMsService {
   }
 
   async validateUserProject(user: IJwtPayload, projectId: number) { }
+
+  async hydrateTask(taskId: number, data?: { members?: Array<Member>, projectTags?: Array<ProjectTag> }, tx?: Omit<PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">) {
+    if (!tx) {
+      tx = this.database;
+    }
+
+    if (data.members && data.members.length > 0) {
+      await tx.taskMember.createMany({
+        data: (data.members || []).map((member) => ({ taskId, memberId: member.id })),
+        skipDuplicates: true,
+      })
+    }
+
+    if (data.projectTags && data.projectTags.length > 0) {
+      await tx.taskTag.deleteMany({ where: { taskId } })
+
+      await tx.taskTag.createMany({
+        data: data.projectTags.map((projectTag: ProjectTag) => ({ taskId: taskId, projectTagId: projectTag.id }))
+      })
+    }
+
+  }
 }
