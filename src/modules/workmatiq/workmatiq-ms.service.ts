@@ -165,6 +165,11 @@ export class WorkmatiqMsService {
                   include: {
                     member: true
                   }
+                },
+                taskTags: {
+                  select: {
+                    projectTagId: true
+                  }
                 }
               },
             },
