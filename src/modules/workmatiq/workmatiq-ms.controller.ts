@@ -101,4 +101,13 @@ export class WorkmatiqMsController {
   ): Promise<Array<{ taskAttachment: TaskAttachment, attachmentThumbnail: AttachmentThumbnail }>> {
     return this.service.listenToPatchUserWorksheetTaskAttachmentsTopic(user, id, attachments);
   }
+
+  @Delete('tasks/:id')
+  @UseGuards(CustomAuthGuard)
+  listenToDeleteUserWorksheetTaskTopic(
+    @GetUser() user: IJwtPayload,
+    @Param('id', ParseIntPipe) id: number
+  ) {
+    return this.service.listenToDeleteUserWorksheetTaskTopic(user, id);
+  }
 }

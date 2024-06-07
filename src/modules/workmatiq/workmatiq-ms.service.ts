@@ -184,6 +184,9 @@ export class WorkmatiqMsService {
                   }
                 }
               },
+              where: {
+                isArchived: false
+              }
             },
             statusList: true
           }
@@ -319,11 +322,28 @@ export class WorkmatiqMsService {
 
   async listenToCreateUserWorksheetTaskTopic(user: IJwtPayload, dto: any) {
     const task = await this.database.$transaction(async (tx) => {
+      const worksheet = await tx.worksheet.findFirst({
+        where: {
+          id: dto.worksheetId
+        },
+        select: {
+          id: true,
+          workspaceId: true,
+          workspace: {
+            select: {
+              projectId: true
+            }
+          }
+        }
+      })
+
       let task = await tx.task.create({
         data: {
           title: dto.title,
           description: dto.description,
-          worksheetId: dto.worksheetId,
+          worksheetId: worksheet.id,
+          workspaceId: worksheet.workspaceId,
+          projectId: worksheet.workspace.projectId,
           createdById: user.userEntityId,
         },
       })
@@ -455,6 +475,17 @@ export class WorkmatiqMsService {
     }))
 
     return result
+  }
+
+  async listenToDeleteUserWorksheetTaskTopic(user: IJwtPayload, id: number) {
+    return this.database.task.update({
+      where: {
+        id
+      },
+      data: {
+        isArchived: true
+      }
+    })
   }
 
   async hydrateTask(taskId: number, data?: { members?: Array<Member>, projectTags?: Array<ProjectTag> }, tx?: Omit<PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">) {

@@ -167,6 +167,7 @@ model Project {
   statusLists    StatusList[]
   corporate      Corporate       @relation(fields: [corporateId], references: [id])
   tags           ProjectTag[]
+  Task           Task[]
 
   @@map("projects")
 }
@@ -348,6 +349,7 @@ model Workspace {
   // documents        Document[]
   // meetings         Meeting[]
   // whiteboards      Whiteboard[]
+  Task             Task[]
 
   @@map("workspaces")
 }
@@ -394,11 +396,14 @@ model StatusList {
 }
 
 model Task {
-  id          Int    @id @default(autoincrement())
-  title       String @default("")
-  description String @default("")
+  id          Int     @id @default(autoincrement())
+  title       String  @default("")
+  description String  @default("")
+  isArchived  Boolean @default(false)
 
   worksheetId     Int
+  workspaceId     Int
+  projectId       Int
   createdById     Int
   categoryId      Int?
   parentTaskId    Int?
@@ -406,6 +411,8 @@ model Task {
   dependsOn       Int?
 
   worksheet       Worksheet        @relation(fields: [worksheetId], references: [id])
+  workspace       Workspace        @relation(fields: [workspaceId], references: [id])
+  project         Project          @relation(fields: [projectId], references: [id])
   createdBy       UserEntity       @relation(fields: [createdById], references: [id])
   parentTask      Task?            @relation("ChildTasks", fields: [parentTaskId], references: [id])
   dependsOnTask   Task?            @relation("DependentTasks", fields: [dependsOnTaskId], references: [id])
