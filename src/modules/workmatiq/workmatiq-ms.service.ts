@@ -1,18 +1,20 @@
 import { Injectable } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
-import { Member, Prisma, PrismaClient, ProjectTag, StatusListType } from "@prisma/client"
+import { AttachmentThumbnail, Member, Prisma, PrismaClient, ProjectTag, StatusListType, TaskAttachment } from "@prisma/client"
 import { DefaultArgs } from "@prisma/client/runtime/library"
 import { IJwtPayload } from "src/interfaces"
 import { ICreateUserCorporateTopic } from "src/interfaces/kafka-topics/hr"
 import { PayloadType } from "src/interfaces/topic.interface"
 import { DatabaseService } from "../database/database.service"
+import { StorageService } from "../storage/storage.service"
 import { ProjectPreferenceService } from "./services/project-preference.service"
 
 @Injectable()
 export class WorkmatiqMsService {
   constructor(
-    private configService: ConfigService,
     private database: DatabaseService,
+    private configService: ConfigService,
+    private storageService: StorageService,
 
     private projectPreferenceService: ProjectPreferenceService,
   ) { }
@@ -169,6 +171,15 @@ export class WorkmatiqMsService {
                 taskTags: {
                   select: {
                     projectTagId: true
+                  }
+                },
+                taskAttachments: {
+                  select: {
+                    thumbnails: {
+                      select: {
+                        url: true
+                      }
+                    }
                   }
                 }
               },
@@ -412,13 +423,38 @@ export class WorkmatiqMsService {
             projectTag: true
           }
         },
+        taskAttachments: {
+          include: {
+            thumbnails: true
+          }
+        },
         worksheet: true,
         createdBy: true,
       }
     })
   }
 
-  async validateUserProject(user: IJwtPayload, projectId: number) { }
+  async listenToPatchUserWorksheetTaskAttachmentsTopic(user: IJwtPayload, id: number, attachments: Array<Express.Multer.File>): Promise<Array<{ taskAttachment: TaskAttachment, attachmentThumbnail: AttachmentThumbnail }>> {
+    const result = await Promise.all(attachments.map(async (attachment) => {
+      const [attachmentUrl, thumbnailUrl] = await this.storageService.uploadAttachment(attachment)
+
+      const taskAttachment = await this.database.taskAttachment.create({
+        data: { taskId: id, url: attachmentUrl }
+      })
+
+      const attachmentThumbnail = await this.database.attachmentThumbnail.create({
+        data: { attachmentId: taskAttachment.id, url: thumbnailUrl }
+      })
+
+
+      return {
+        taskAttachment,
+        attachmentThumbnail
+      }
+    }))
+
+    return result
+  }
 
   async hydrateTask(taskId: number, data?: { members?: Array<Member>, projectTags?: Array<ProjectTag> }, tx?: Omit<PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">) {
     if (!tx) {
@@ -426,6 +462,7 @@ export class WorkmatiqMsService {
     }
 
     if (data.members && data.members.length > 0) {
+      await tx.taskMember.deleteMany({ where: { taskId } })
       await tx.taskMember.createMany({
         data: (data.members || []).map((member) => ({ taskId, memberId: member.id })),
         skipDuplicates: true,
@@ -439,6 +476,7 @@ export class WorkmatiqMsService {
         data: data.projectTags.map((projectTag: ProjectTag) => ({ taskId: taskId, projectTagId: projectTag.id }))
       })
     }
-
   }
+
+  async validateUserProject(user: IJwtPayload, projectId: number) { }
 }

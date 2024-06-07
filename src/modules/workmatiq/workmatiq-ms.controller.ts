@@ -1,4 +1,6 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { AttachmentThumbnail, TaskAttachment } from '@prisma/client';
 import { CustomAuthGuard } from 'src/guards/auth.guard';
 import { GetUser } from 'src/guards/get-user.guard';
 import { IJwtPayload } from 'src/interfaces';
@@ -65,7 +67,7 @@ export class WorkmatiqMsController {
   @UseGuards(CustomAuthGuard)
   listenToCreateUserWorksheetTaskTopic(
     @GetUser() user: IJwtPayload,
-    @Body() dto: any
+    @Body() dto: any,
   ) {
     return this.service.listenToCreateUserWorksheetTaskTopic(user, dto);
   }
@@ -84,8 +86,19 @@ export class WorkmatiqMsController {
   listenToPatchUserWorksheetTaskTopic(
     @GetUser() user: IJwtPayload,
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: any
+    @Body() dto: any,
   ) {
     return this.service.listenToPatchUserWorksheetTaskTopic(user, id, dto);
+  }
+
+  @Patch('tasks/:id/attachments')
+  @UseGuards(CustomAuthGuard)
+  @UseInterceptors(FilesInterceptor('attachments'))
+  listenToPatchUserWorksheetTaskAttachmentsTopic(
+    @GetUser() user: IJwtPayload,
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFiles() attachments: Array<Express.Multer.File>
+  ): Promise<Array<{ taskAttachment: TaskAttachment, attachmentThumbnail: AttachmentThumbnail }>> {
+    return this.service.listenToPatchUserWorksheetTaskAttachmentsTopic(user, id, attachments);
   }
 }

@@ -2,7 +2,7 @@ import { HttpException, HttpStatus, Injectable, Logger, OnModuleInit } from '@ne
 import { ConfigService } from '@nestjs/config';
 import { MinioService } from 'nestjs-minio-client';
 import * as sharp from 'sharp';
-import { StorageTypeErrors, StorageTypes } from './storage-types.enum';
+import { StorageTypeErrors, StorageTypes } from './libs/storage-types.enum';
 
 @Injectable()
 export class MinioClientService implements OnModuleInit {
@@ -17,8 +17,8 @@ export class MinioClientService implements OnModuleInit {
         return this.minio.client;
     }
 
-    public async uploadAttachment(file: Express.Multer.File, type: StorageTypes, bucketName: string = this.bucketName): Promise<Record<string, string>> {
-        const { folder, error } = this.generateMinioMeta(type);
+    public async uploadAttachment(file: Express.Multer.File, type: StorageTypes, bucketName: string = this.bucketName): Promise<string> {
+        const { folder } = this.generateMinioMeta(type);
 
         try {
             const { fileName, buffer, metaData } = this.getExtension(file);
@@ -27,12 +27,10 @@ export class MinioClientService implements OnModuleInit {
                 console.log(err);
             });
 
-            return {
-                url: fileName
-            };
-        } catch (er) {
-            console.log(er);
-            throw new HttpException(error, HttpStatus.BAD_REQUEST);
+            return `${folder}/${fileName}`
+        } catch (error) {
+            console.error(error);
+            throw new HttpException('Error uploading attachment', HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -40,7 +38,7 @@ export class MinioClientService implements OnModuleInit {
         file: Express.Multer.File,
         fileName: string,
         bucketName: string = this.bucketName
-    ): Promise<void> {
+    ): Promise<string> {
         try {
             const { buffer, metaData } = this.getExtension(file);
 
@@ -52,13 +50,12 @@ export class MinioClientService implements OnModuleInit {
                 .withMetadata()
                 .toBuffer();
 
-            this.client.putObject(bucketName, 'images/thumbnails/' + fileName, thumbNail, metaData).catch((err) => {
-                console.error(err);
-                throw new HttpException('Error creating thumbnail', HttpStatus.BAD_REQUEST);
-            });
+            await this.client.putObject(bucketName, 'images/thumbnails/' + fileName, thumbNail, metaData)
 
+            return fileName
         } catch (error) {
             console.error(error);
+            throw new HttpException('Error uploading thumbnail', HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -194,50 +191,50 @@ export class MinioClientService implements OnModuleInit {
 
         switch (type) {
             case StorageTypes.image:
-                folder = 'images/';
+                folder = 'images';
                 break;
             case StorageTypes.video:
-                folder = 'videos/';
+                folder = 'videos';
                 break;
             case StorageTypes.pdf:
-                folder = 'pdf/';
+                folder = 'pdf';
                 break;
             case StorageTypes.corporate_logo:
             case StorageTypes.corporate_logo_update:
-                folder = 'corporate/corporateLogo/';
+                folder = 'corporate/corporateLogo';
                 break;
             case StorageTypes.candidate_documents:
             case StorageTypes.candidate_documents_update:
-                folder = 'candidate/documents/';
+                folder = 'candidate/documents';
                 break;
             case StorageTypes.candidate_images:
-                folder = 'candidate/images/';
+                folder = 'candidate/images';
                 break;
             case StorageTypes.corporate_documents:
-                folder = 'corporate/documents/';
+                folder = 'corporate/documents';
                 break;
             case StorageTypes.corporate_videos:
-                folder = 'corporate/videos/';
+                folder = 'corporate/videos';
                 break;
             case StorageTypes.candidate_videos:
-                folder = 'candidate/videos/';
+                folder = 'candidate/videos';
                 break;
             case StorageTypes.corporate_images:
-                folder = 'corporate/images/';
+                folder = 'corporate/images';
                 break;
             case StorageTypes.corporate_test_question:
             case StorageTypes.corporate_test_question_update:
-                folder = 'corporate/test/';
+                folder = 'corporate/test';
                 break;
             case StorageTypes.candidate_test_answer:
             case StorageTypes.candidate_test_answer_update:
-                folder = 'corporate/test/answers/';
+                folder = 'corporate/test/answers';
                 break;
             case StorageTypes.task_attachment:
-                folder = 'task/attachments/'
+                folder = 'task/attachments';
                 break;
             default:
-                folder = '/';
+                folder = '';
                 break;
         }
 

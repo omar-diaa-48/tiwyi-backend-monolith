@@ -1,16 +1,16 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { MinioClientService } from './libs/minio-client.service';
 import { StorageTypes } from './libs/storage-types.enum';
+import { MinioClientService } from './minio-client.service';
 
 @Injectable()
-export class StorageMicroService {
+export class StorageService {
     constructor(private minioClientService: MinioClientService) { }
 
-    async uploadAttachment(file: Express.Multer.File): Promise<Record<string, string>> {
+    async uploadAttachment(file: Express.Multer.File): Promise<[string, string]> {
         try {
-            const link: Record<string, string> = await this.minioClientService.uploadAttachment(file, StorageTypes.task_attachment);
-            await this.minioClientService.uploadThumbnail(file, link?.url);
-            return link;
+            const attachmentUrl = await this.minioClientService.uploadAttachment(file, StorageTypes.task_attachment);
+            const thumbnailUrl = await this.minioClientService.uploadThumbnail(file, attachmentUrl);
+            return [attachmentUrl, thumbnailUrl];
         } catch (error) {
             throw new HttpException('Unable to upload the attachment: ' + error, HttpStatus.BAD_REQUEST);
         }

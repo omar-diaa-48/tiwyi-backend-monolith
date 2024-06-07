@@ -405,12 +405,13 @@ model Task {
   dependsOnTaskId Int?
   dependsOn       Int?
 
-  worksheet     Worksheet     @relation(fields: [worksheetId], references: [id])
-  createdBy     UserEntity    @relation(fields: [createdById], references: [id])
-  parentTask    Task?         @relation("ChildTasks", fields: [parentTaskId], references: [id])
-  dependsOnTask Task?         @relation("DependentTasks", fields: [dependsOnTaskId], references: [id])
-  taskMembers   TaskMember[]
-  taskComments  TaskComment[]
+  worksheet       Worksheet        @relation(fields: [worksheetId], references: [id])
+  createdBy       UserEntity       @relation(fields: [createdById], references: [id])
+  parentTask      Task?            @relation("ChildTasks", fields: [parentTaskId], references: [id])
+  dependsOnTask   Task?            @relation("DependentTasks", fields: [dependsOnTaskId], references: [id])
+  taskMembers     TaskMember[]
+  taskComments    TaskComment[]
+  taskAttachments TaskAttachment[]
 
   dependentTasks Task[]    @relation("DependentTasks")
   childTasks     Task[]    @relation("ChildTasks")
@@ -438,6 +439,29 @@ model TaskComment {
   task Task @relation(fields: [taskId], references: [id])
 
   @@map("task_comments")
+}
+
+model TaskAttachment {
+  id Int @id @default(autoincrement())
+
+  url    String
+  taskId Int
+
+  task       Task                  @relation(fields: [taskId], references: [id])
+  thumbnails AttachmentThumbnail[]
+
+  @@map("task_attachments")
+}
+
+model AttachmentThumbnail {
+  id Int @id @default(autoincrement())
+
+  url          String
+  attachmentId Int
+
+  attachment TaskAttachment @relation(fields: [attachmentId], references: [id])
+
+  @@map("attachment_thumbnails")
 }
 
 enum Currency {
