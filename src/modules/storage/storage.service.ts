@@ -9,7 +9,7 @@ export class StorageService {
     async uploadAttachment(file: Express.Multer.File): Promise<[string, string]> {
         try {
             const attachmentUrl = await this.minioClientService.uploadAttachment(file, StorageTypes.task_attachment);
-            const thumbnailUrl = await this.minioClientService.uploadThumbnail(file, attachmentUrl);
+            const thumbnailUrl = await this.minioClientService.uploadThumbnail(file);
             return [attachmentUrl, thumbnailUrl];
         } catch (error) {
             throw new HttpException('Unable to upload the attachment: ' + error, HttpStatus.BAD_REQUEST);

@@ -175,6 +175,7 @@ export class WorkmatiqMsService {
                 },
                 taskAttachments: {
                   select: {
+                    url: true,
                     thumbnails: {
                       select: {
                         url: true

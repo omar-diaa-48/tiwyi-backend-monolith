@@ -36,11 +36,11 @@ export class MinioClientService implements OnModuleInit {
 
     public async uploadThumbnail(
         file: Express.Multer.File,
-        fileName: string,
         bucketName: string = this.bucketName
     ): Promise<string> {
         try {
-            const { buffer, metaData } = this.getExtension(file);
+            const folder = 'images/thumbnails'
+            const { fileName, buffer, metaData } = this.getExtension(file);
 
             const thumbNail = await sharp(Buffer.from(buffer))
                 .resize({
@@ -50,7 +50,7 @@ export class MinioClientService implements OnModuleInit {
                 .withMetadata()
                 .toBuffer();
 
-            await this.client.putObject(bucketName, 'images/thumbnails/' + fileName, thumbNail, metaData)
+            await this.client.putObject(bucketName, folder + fileName, thumbNail, metaData)
 
             return fileName
         } catch (error) {
