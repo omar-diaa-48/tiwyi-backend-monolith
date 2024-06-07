@@ -23,11 +23,11 @@ export class MinioClientService implements OnModuleInit {
         try {
             const { fileName, buffer, metaData } = this.getExtension(file);
 
-            this.client.putObject(bucketName, folder + fileName, Buffer.from(buffer), metaData).catch((err) => {
-                console.log(err);
-            });
+            const uploadedPath = `${folder}/${fileName}`
 
-            return `${folder}/${fileName}`
+            await this.client.putObject(bucketName, uploadedPath, Buffer.from(buffer), metaData)
+
+            return uploadedPath
         } catch (error) {
             console.error(error);
             throw new HttpException('Error uploading attachment', HttpStatus.BAD_REQUEST);
@@ -50,9 +50,11 @@ export class MinioClientService implements OnModuleInit {
                 .withMetadata()
                 .toBuffer();
 
-            await this.client.putObject(bucketName, folder + fileName, thumbNail, metaData)
+            const uploadedPath = `${folder}/${fileName}`
 
-            return fileName
+            await this.client.putObject(bucketName, uploadedPath, thumbNail, metaData)
+
+            return uploadedPath
         } catch (error) {
             console.error(error);
             throw new HttpException('Error uploading thumbnail', HttpStatus.BAD_REQUEST);

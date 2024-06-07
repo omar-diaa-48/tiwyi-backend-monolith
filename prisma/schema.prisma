@@ -439,8 +439,8 @@ model TaskMember {
 
 model TaskComment {
   id      Int    @id @default(autoincrement())
+  
   content String
-
   taskId Int
 
   task Task @relation(fields: [taskId], references: [id])

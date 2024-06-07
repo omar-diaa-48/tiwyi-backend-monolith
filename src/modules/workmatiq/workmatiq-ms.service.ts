@@ -1,12 +1,13 @@
 import { Injectable } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
-import { AttachmentThumbnail, Member, Prisma, PrismaClient, ProjectTag, StatusListType, TaskAttachment } from "@prisma/client"
+import { Member, Prisma, PrismaClient, ProjectTag, StatusListType, Task } from "@prisma/client"
 import { DefaultArgs } from "@prisma/client/runtime/library"
 import { IJwtPayload } from "src/interfaces"
 import { ICreateUserCorporateTopic } from "src/interfaces/kafka-topics/hr"
 import { PayloadType } from "src/interfaces/topic.interface"
 import { DatabaseService } from "../database/database.service"
 import { StorageService } from "../storage/storage.service"
+import { TASK_BOARD_CARD_INCLUDES, TASK_BOARD_COLUMN_INCLUDES } from "./libs/prisma.includes"
 import { ProjectPreferenceService } from "./services/project-preference.service"
 
 @Injectable()
@@ -162,28 +163,7 @@ export class WorkmatiqMsService {
         worksheets: {
           include: {
             tasks: {
-              include: {
-                taskMembers: {
-                  include: {
-                    member: true
-                  }
-                },
-                taskTags: {
-                  select: {
-                    projectTagId: true
-                  }
-                },
-                taskAttachments: {
-                  select: {
-                    url: true,
-                    thumbnails: {
-                      select: {
-                        url: true
-                      }
-                    }
-                  }
-                }
-              },
+              include: TASK_BOARD_COLUMN_INCLUDES,
               where: {
                 isArchived: false
               }
@@ -359,13 +339,7 @@ export class WorkmatiqMsService {
         where: {
           id: task.id,
         },
-        include: {
-          taskMembers: {
-            include: {
-              member: true
-            }
-          }
-        }
+        include: TASK_BOARD_COLUMN_INCLUDES
       })
 
       return task;
@@ -379,7 +353,8 @@ export class WorkmatiqMsService {
       let task = await tx.task.findFirstOrThrow({
         where: {
           id
-        }
+        },
+        include: TASK_BOARD_COLUMN_INCLUDES
       })
 
       let updateObj = {}
@@ -395,7 +370,8 @@ export class WorkmatiqMsService {
           where: {
             id
           },
-          data: updateObj
+          data: updateObj,
+          include: TASK_BOARD_COLUMN_INCLUDES
         })
       }
 
@@ -412,51 +388,12 @@ export class WorkmatiqMsService {
       where: {
         id
       },
-      include: {
-        taskComments: true,
-        taskMembers: {
-          include: {
-            member: true
-          }
-        },
-        dependsOnTask: {
-          select: {
-            title: true
-          }
-        },
-        dependentTasks: {
-          select: {
-            _count: true
-          }
-        },
-        parentTask: {
-          select: {
-            title: true
-          }
-        },
-        childTasks: {
-          select: {
-            _count: true
-          }
-        },
-        taskTags: {
-          include: {
-            projectTag: true
-          }
-        },
-        taskAttachments: {
-          include: {
-            thumbnails: true
-          }
-        },
-        worksheet: true,
-        createdBy: true,
-      }
+      include: TASK_BOARD_CARD_INCLUDES
     })
   }
 
-  async listenToPatchUserWorksheetTaskAttachmentsTopic(user: IJwtPayload, id: number, attachments: Array<Express.Multer.File>): Promise<Array<{ taskAttachment: TaskAttachment, attachmentThumbnail: AttachmentThumbnail }>> {
-    const result = await Promise.all(attachments.map(async (attachment) => {
+  async listenToPatchUserWorksheetTaskAttachmentsTopic(user: IJwtPayload, id: number, attachments: Array<Express.Multer.File>): Promise<Task> {
+    await Promise.all(attachments.map(async (attachment) => {
       const [attachmentUrl, thumbnailUrl] = await this.storageService.uploadAttachment(attachment)
 
       const taskAttachment = await this.database.taskAttachment.create({
@@ -474,7 +411,12 @@ export class WorkmatiqMsService {
       }
     }))
 
-    return result
+    return this.database.task.findFirstOrThrow({
+      where: {
+        id
+      },
+      include: TASK_BOARD_COLUMN_INCLUDES
+    })
   }
 
   async listenToDeleteUserWorksheetTaskTopic(user: IJwtPayload, id: number) {
