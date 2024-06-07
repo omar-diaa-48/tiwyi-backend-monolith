@@ -372,6 +372,7 @@ model Worksheet {
 
   title       String @default("To do")
   description String @default("")
+  order       Int    @default(0)
 
   workspaceId  Int
   statusListId Int
@@ -438,10 +439,10 @@ model TaskMember {
 }
 
 model TaskComment {
-  id      Int    @id @default(autoincrement())
-  
+  id Int @id @default(autoincrement())
+
   content String
-  taskId Int
+  taskId  Int
 
   task Task @relation(fields: [taskId], references: [id])
 

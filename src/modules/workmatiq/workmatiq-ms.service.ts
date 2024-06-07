@@ -300,6 +300,21 @@ export class WorkmatiqMsService {
     })
   }
 
+  async listenToPatchUserWorksheetTopic(user: IJwtPayload, id: number, dto: any) {
+    return this.database.worksheet.update({
+      where: {
+        id
+      },
+      data: dto,
+      include: {
+        tasks: {
+          include: TASK_BOARD_COLUMN_INCLUDES
+        },
+        statusList: true
+      }
+    })
+  }
+
   async listenToCreateUserWorksheetTaskTopic(user: IJwtPayload, dto: any) {
     const task = await this.database.$transaction(async (tx) => {
       const worksheet = await tx.worksheet.findFirst({
