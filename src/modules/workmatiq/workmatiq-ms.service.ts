@@ -245,7 +245,7 @@ export class WorkmatiqMsService {
           }
         })
 
-        await this.changeLogService.createLog(dto.projectId, { entityId: workspace.id, entityName: workspace.title, entityType: EntityTypeEnum.WORKSPACE, changeType: ChangeTypeEnum.CREATE, newState: {} })
+        await this.changeLogService.createLog(dto.projectId, { entityId: workspace.id, entityName: workspace.title, entityType: EntityTypeEnum.WORKSPACE, changeType: ChangeTypeEnum.CREATE, newState: {} }, user)
 
         return workspace
       })
@@ -309,7 +309,7 @@ export class WorkmatiqMsService {
         }
       })
 
-      await this.changeLogService.createLog(dto.projectId, { entityId: worksheet.id, entityName: worksheet.title, entityType: EntityTypeEnum.WORKSHEET, changeType: ChangeTypeEnum.CREATE, newState: {} })
+      await this.changeLogService.createLog(dto.projectId, { entityId: worksheet.id, entityName: worksheet.title, entityType: EntityTypeEnum.WORKSHEET, changeType: ChangeTypeEnum.CREATE, newState: {} }, user)
 
       return worksheet
     })
@@ -374,7 +374,7 @@ export class WorkmatiqMsService {
         include: TASK_BOARD_COLUMN_INCLUDES
       })
 
-      await this.changeLogService.createLog(task.projectId, { entityId: task.id, entityName: task.title, entityType: EntityTypeEnum.TASK, changeType: ChangeTypeEnum.CREATE, newState: {} })
+      await this.changeLogService.createLog(task.projectId, { entityId: task.id, entityName: task.title, entityType: EntityTypeEnum.TASK, changeType: ChangeTypeEnum.CREATE, newState: {} }, user)
 
       return task;
     })
@@ -411,7 +411,7 @@ export class WorkmatiqMsService {
 
       await this.hydrateTask(task.id, { members: dto.members, projectTags: dto.projectTags }, tx)
 
-      await this.changeLogService.createLog(task.projectId, { entityId: task.id, entityName: task.title, entityType: EntityTypeEnum.TASK, changeType: ChangeTypeEnum.UPDATE, newState: task })
+      await this.changeLogService.createLog(task.projectId, { entityId: task.id, entityName: task.title, entityType: EntityTypeEnum.TASK, changeType: ChangeTypeEnum.UPDATE, newState: task }, user)
 
       return task;
     })

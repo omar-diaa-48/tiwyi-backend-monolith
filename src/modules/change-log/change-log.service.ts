@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
+import { IJwtPayload } from "src/interfaces";
 import { ChangeLog } from "../database/mongodb/schemas/change-log.schema";
 import { EntityChangeLog } from "../database/mongodb/schemas/entity-change-log.schema";
 import { CreateEntityDto } from "./dtos/create-entity.dto";
@@ -24,7 +25,8 @@ export class ChangeLogService {
 
     async createLog(
         projectId: number,
-        dto: CreateLogDto
+        dto: CreateLogDto,
+        user: IJwtPayload
     ) {
         const { changeType, newState } = dto;
         let entityChangeLog = await this.entityChangeLogModel.findOne({ entityId: dto.entityId, entityType: dto.entityType });

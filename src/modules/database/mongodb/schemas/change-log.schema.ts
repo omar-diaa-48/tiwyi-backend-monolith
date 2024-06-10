@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Type } from 'class-transformer';
 import mongoose, { HydratedDocument } from 'mongoose';
+import { IJwtPayload } from 'src/interfaces';
 import { ChangeTypeEnum } from 'src/modules/change-log/libs/change-type.enum';
 import { EntityChangeLog } from './entity-change-log.schema';
 
@@ -13,6 +14,12 @@ export class ChangeLog {
 
     @Prop({ type: String, enum: ChangeTypeEnum })
     changeType: ChangeTypeEnum;
+
+    @Prop({ type: Date, default: Date.now })
+    createdAt: Date;
+
+    @Prop({ type: Map, of: mongoose.Schema.Types.Mixed })
+    changeMaker: IJwtPayload;
 
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'EntityChangeLog' })
     @Type(() => EntityChangeLog)
