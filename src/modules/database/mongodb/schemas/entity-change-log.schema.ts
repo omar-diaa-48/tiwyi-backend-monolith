@@ -18,7 +18,7 @@ export class EntityChangeLog {
     @Prop()
     entityProjectId: number;
 
-    @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: ChangeLog.name }] })
+    @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'ChangeLog' }] })
     changeLogs: ChangeLog[];
 }
 

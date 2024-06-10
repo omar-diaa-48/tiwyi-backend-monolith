@@ -7,10 +7,10 @@ export type ChangeLogDocument = HydratedDocument<ChangeLog>;
 
 @Schema()
 export class ChangeLog {
-    @Prop()
+    @Prop({ type: Map, of: mongoose.Schema.Types.Mixed })
     newState: Record<string, any>;
 
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: EntityChangeLog.name })
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'EntityChangeLog' })
     @Type(() => EntityChangeLog)
     entityChangeLog: EntityChangeLog;
 }
