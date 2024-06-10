@@ -2,9 +2,13 @@ import { Injectable } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import { Member, Prisma, PrismaClient, ProjectTag, StatusListType, Task } from "@prisma/client"
 import { DefaultArgs } from "@prisma/client/runtime/library"
+import { ExtendedTask } from "prisma/types"
 import { IJwtPayload } from "src/interfaces"
 import { ICreateUserCorporateTopic } from "src/interfaces/kafka-topics/hr"
 import { PayloadType } from "src/interfaces/topic.interface"
+import { ChangeLogService } from "../change-log/change-log.service"
+import { ChangeTypeEnum } from "../change-log/libs/change-type.enum"
+import { EntityTypeEnum } from "../change-log/libs/entity-type.enum"
 import { DatabaseService } from "../database/database.service"
 import { StorageService } from "../storage/storage.service"
 import { TASK_BOARD_CARD_INCLUDES, TASK_BOARD_COLUMN_INCLUDES } from "./libs/prisma.includes"
@@ -16,6 +20,7 @@ export class WorkmatiqMsService {
     private database: DatabaseService,
     private configService: ConfigService,
     private storageService: StorageService,
+    private changeLogService: ChangeLogService,
 
     private projectPreferenceService: ProjectPreferenceService,
   ) { }
@@ -187,62 +192,66 @@ export class WorkmatiqMsService {
   }
 
   async listenToCreateUserWorkspaceTopic(user: IJwtPayload, dto: any) {
-    const workspace = await this.database.$transaction(async (tx) => {
-      const workspace = await tx.workspace.create({
-        data: {
-          title: dto.title,
-          description: dto.description,
-          budget: dto.budget,
-          project: {
-            connect: {
-              id: dto.projectId
-            }
-          }
-        },
-        include: {
-          worksheets: {
-            include: {
-              tasks: true,
-              statusList: true
+    return this.database.$transaction(async (tx) => {
+      const workspace = await this.database.$transaction(async (tx) => {
+        const workspace = await tx.workspace.create({
+          data: {
+            title: dto.title,
+            description: dto.description,
+            budget: dto.budget,
+            project: {
+              connect: {
+                id: dto.projectId
+              }
             }
           },
-          workspaceMembers: {
-            include: {
-              member: {
-                include: {
-                  userEntity: true
+          include: {
+            worksheets: {
+              include: {
+                tasks: true,
+                statusList: true
+              }
+            },
+            workspaceMembers: {
+              include: {
+                member: {
+                  include: {
+                    userEntity: true
+                  }
                 }
               }
             }
           }
-        }
-      })
+        })
 
-      const member = await tx.member.findFirst({
-        where: {
-          userId: user.userEntityId
-        }
-      })
+        const member = await tx.member.findFirst({
+          where: {
+            userId: user.userEntityId
+          }
+        })
 
-      const workspaceMember = await tx.workspaceMember.create({
-        data: {
-          member: {
-            connect: {
-              id: member.id
-            }
-          },
-          workspace: {
-            connect: {
-              id: workspace.id
+        const workspaceMember = await tx.workspaceMember.create({
+          data: {
+            member: {
+              connect: {
+                id: member.id
+              }
+            },
+            workspace: {
+              connect: {
+                id: workspace.id
+              }
             }
           }
-        }
+        })
+
+        await this.changeLogService.createLog(dto.projectId, { entityId: workspace.id, entityName: workspace.title, entityType: EntityTypeEnum.WORKSPACE, changeType: ChangeTypeEnum.CREATE, newState: {} })
+
+        return workspace
       })
 
-      return workspace
+      return workspace;
     })
-
-    return workspace;
   }
 
   async listenToDeleteUserWorkspaceTopic(user: IJwtPayload, id: number) {
@@ -260,44 +269,51 @@ export class WorkmatiqMsService {
   }
 
   async listenToCreateUserWorksheetTopic(user: IJwtPayload, dto: any) {
-    let defaultStatusList = await this.database.statusList.findFirst({
-      where: {
-        AND: {
-          projectId: dto.projectId,
-          statusListType: StatusListType.DEFAULT
-        }
-      }
-    })
-
-    if (!defaultStatusList) {
-      defaultStatusList = await this.database.statusList.create({
-        data: {
-          statusListType: StatusListType.DEFAULT,
-          projectId: dto.projectId
+    return this.database.$transaction(async (tx) => {
+      let defaultStatusList = await this.database.statusList.findFirst({
+        where: {
+          AND: {
+            projectId: dto.projectId,
+            statusListType: StatusListType.DEFAULT
+          }
         }
       })
-    }
 
-    return this.database.worksheet.create({
-      data: {
-        title: dto.title,
-        description: dto.description,
-        statusList: {
-          connect: {
-            id: defaultStatusList.id
+      if (!defaultStatusList) {
+        defaultStatusList = await this.database.statusList.create({
+          data: {
+            statusListType: StatusListType.DEFAULT,
+            projectId: dto.projectId
+          }
+        })
+      }
+
+      const worksheet = await this.database.worksheet.create({
+        data: {
+          title: dto.title,
+          description: dto.description,
+          statusList: {
+            connect: {
+              id: defaultStatusList.id
+            }
+          },
+          workspace: {
+            connect: {
+              id: dto.workspaceId
+            }
           }
         },
-        workspace: {
-          connect: {
-            id: dto.workspaceId
-          }
+        include: {
+          tasks: true,
+          statusList: true
         }
-      },
-      include: {
-        tasks: true,
-        statusList: true
-      }
+      })
+
+      await this.changeLogService.createLog(dto.projectId, { entityId: worksheet.id, entityName: worksheet.title, entityType: EntityTypeEnum.WORKSHEET, changeType: ChangeTypeEnum.CREATE, newState: {} })
+
+      return worksheet
     })
+
   }
 
   async listenToPatchUserWorksheetTopic(user: IJwtPayload, id: number, dto: any) {
@@ -317,6 +333,7 @@ export class WorkmatiqMsService {
 
   async listenToCreateUserWorksheetTaskTopic(user: IJwtPayload, dto: any) {
     const task = await this.database.$transaction(async (tx) => {
+
       const worksheet = await tx.worksheet.findFirst({
         where: {
           id: dto.worksheetId
@@ -357,6 +374,8 @@ export class WorkmatiqMsService {
         include: TASK_BOARD_COLUMN_INCLUDES
       })
 
+      await this.changeLogService.createLog(task.projectId, { entityId: task.id, entityName: task.title, entityType: EntityTypeEnum.TASK, changeType: ChangeTypeEnum.CREATE, newState: {} })
+
       return task;
     })
 
@@ -392,6 +411,8 @@ export class WorkmatiqMsService {
 
       await this.hydrateTask(task.id, { members: dto.members, projectTags: dto.projectTags }, tx)
 
+      await this.changeLogService.createLog(task.projectId, { entityId: task.id, entityName: task.title, entityType: EntityTypeEnum.TASK, changeType: ChangeTypeEnum.UPDATE, newState: task })
+
       return task;
     })
 
@@ -399,12 +420,18 @@ export class WorkmatiqMsService {
   }
 
   async listenToReadUserWorksheetTaskTopic(user: IJwtPayload, id: number) {
-    return this.database.task.findUniqueOrThrow({
+    const task = await this.database.task.findUniqueOrThrow({
       where: {
         id
       },
       include: TASK_BOARD_CARD_INCLUDES
     })
+
+    const logs = await this.changeLogService.getLogs(task.id, EntityTypeEnum.TASK)
+
+    const data: ExtendedTask = Object.assign({}, task, { logs })
+
+    return data;
   }
 
   async listenToPatchUserWorksheetTaskAttachmentsTopic(user: IJwtPayload, id: number, attachments: Array<Express.Multer.File>): Promise<Task> {
