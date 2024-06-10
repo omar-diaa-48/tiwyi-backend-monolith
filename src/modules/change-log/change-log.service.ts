@@ -38,12 +38,12 @@ export class ChangeLogService {
         const usedNewState = {}
 
         for (const key in newState) {
-            if (!(['function', 'object', 'symbol', 'undefined'].includes(typeof newState[key]))) {
+            if (!(['function', 'symbol', 'undefined'].includes(typeof newState[key]))) {
                 usedNewState[key] = newState[key];
             }
         }
 
-        return this.changeLogModel.create({ changeType, newState: usedNewState, entityChangeLog });
+        return this.changeLogModel.create({ changeType, newState: usedNewState, entityChangeLog, changeMaker: user, });
     }
 
     async getLogs(
@@ -56,6 +56,6 @@ export class ChangeLogService {
             return [];
         }
 
-        return this.changeLogModel.find({ entityChangeLog });
+        return this.changeLogModel.find({ entityChangeLog }, null, { sort: { createdAt: -1 } });
     }
 }
