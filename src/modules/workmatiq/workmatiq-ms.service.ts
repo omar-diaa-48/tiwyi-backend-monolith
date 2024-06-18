@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import { Member, Prisma, PrismaClient, ProjectTag, StatusListType, Task } from "@prisma/client"
 import { DefaultArgs } from "@prisma/client/runtime/library"
-import { ExtendedTask } from "prisma/types"
+import { ExtendedProject, ExtendedTask } from "prisma/types"
 import { IJwtPayload } from "src/interfaces"
 import { ICreateUserCorporateTopic } from "src/interfaces/kafka-topics/hr"
 import { PayloadType } from "src/interfaces/topic.interface"
@@ -92,7 +92,7 @@ export class WorkmatiqMsService {
   async listenToReadUserProjectsTopic(user: IJwtPayload) {
     const userEmployeeIds = await this.database.employee.findMany({ where: { userId: user.userEntityId }, select: { id: true } })
 
-    return this.database.project.findMany({
+    const projects = await this.database.project.findMany({
       where: {
         OR: [
           {
@@ -124,6 +124,17 @@ export class WorkmatiqMsService {
         tags: true
       }
     })
+
+    const projectIds = projects.map((project) => project.id);
+
+    const overview = await this.changeLogService.getOverview(projectIds)
+
+    const data: Array<ExtendedProject> = projects.map((project) => {
+      const projectOverview = overview.find((overviewItem) => overviewItem.projectId === project.id)
+      return Object.assign({}, project, { overview: projectOverview })
+    })
+
+    return data
   }
 
   async listenToCreateUserProjectTagTopic(user: IJwtPayload, id: number, dto: any) {
@@ -501,7 +512,6 @@ export class WorkmatiqMsService {
 
     return task
   }
-
 
   async listenToDeleteUserWorksheetTaskTopic(user: IJwtPayload, id: number) {
     return this.database.task.update({

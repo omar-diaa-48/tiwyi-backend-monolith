@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { IJwtPayload } from "src/interfaces";
+import { IProjectOverviewResponse } from "src/interfaces/response.interface";
 import { ChangeLog } from "../database/mongodb/schemas/change-log.schema";
 import { EntityChangeLog } from "../database/mongodb/schemas/entity-change-log.schema";
 import { CreateEntityDto } from "./dtos/create-entity.dto";
@@ -57,5 +58,26 @@ export class ChangeLogService {
         }
 
         return this.changeLogModel.find({ entityChangeLog }, null, { sort: { createdAt: -1 } });
+    }
+
+    async getOverview(projectIds: number[]): Promise<Array<IProjectOverviewResponse>> {
+        const categoryCounts = await this.changeLogModel.aggregate<IProjectOverviewResponse>([
+            {
+                $lookup: {
+                    from: this.entityChangeLogModel.collection.name,
+                    localField: "entityChangeLog",
+                    foreignField: "_id",
+                    as: "entityChangeLogDetails"
+                }
+            },
+            {
+                $unwind: "$entityChangeLogDetails"
+            },
+            { $match: { "entityChangeLogDetails.entityProjectId": { $in: projectIds } } },
+            { $group: { _id: { projectId: "$entityChangeLogDetails.entityProjectId", category: "$entityChangeLogDetails.entityType" }, count: { $sum: 1 } } },
+            { $project: { _id: 0, category: "$_id.category", count: 1, projectId: "$_id.projectId" } }
+        ]);
+
+        return categoryCounts;
     }
 }
