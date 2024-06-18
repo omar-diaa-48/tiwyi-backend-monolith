@@ -112,6 +112,16 @@ export class WorkmatiqMsController {
     return this.service.listenToPatchUserWorksheetTaskAttachmentsTopic(user, id, attachments);
   }
 
+  @Patch('tasks/:id/comments')
+  @UseGuards(CustomAuthGuard)
+  listenToPatchUserWorksheetTaskCommentsTopic(
+    @GetUser() user: IJwtPayload,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: any
+  ) {
+    return this.service.listenToPatchUserWorksheetTaskCommentsTopic(user, id, dto);
+  }
+
   @Delete('tasks/:id')
   @UseGuards(CustomAuthGuard)
   listenToDeleteUserWorksheetTaskTopic(

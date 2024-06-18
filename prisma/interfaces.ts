@@ -357,6 +357,7 @@ export interface ITaskComment {
     content: string;
     taskId: number;
     task: ITask;
+    createdBy: IUserEntity;
 }
 
 export interface ITaskAttachment {

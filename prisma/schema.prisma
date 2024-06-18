@@ -31,9 +31,10 @@ model UserEntity {
 
   userId Int
 
-  user    User     @relation(fields: [userId], references: [id])
-  members Member[]
-  tasks   Task[]
+  user         User          @relation(fields: [userId], references: [id])
+  members      Member[]
+  tasks        Task[]
+  taskComments TaskComment[]
 
   @@map("user_entities")
 }
@@ -441,10 +442,12 @@ model TaskMember {
 model TaskComment {
   id Int @id @default(autoincrement())
 
-  content String
-  taskId  Int
+  content     String
+  taskId      Int
+  createdById Int
 
-  task Task @relation(fields: [taskId], references: [id])
+  task      Task       @relation(fields: [taskId], references: [id])
+  createdBy UserEntity @relation(fields: [createdById], references: [id])
 
   @@map("task_comments")
 }

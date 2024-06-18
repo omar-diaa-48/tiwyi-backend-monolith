@@ -446,7 +446,6 @@ export class WorkmatiqMsService {
         data: { attachmentId: taskAttachment.id, url: thumbnailUrl }
       })
 
-
       return {
         taskAttachment,
         attachmentThumbnail
@@ -460,6 +459,49 @@ export class WorkmatiqMsService {
       include: TASK_BOARD_COLUMN_INCLUDES
     })
   }
+
+  async listenToPatchUserWorksheetTaskCommentsTopic(user: IJwtPayload, id: number, dto: any): Promise<Task> {
+    const task = await this.database.$transaction(async (tx) => {
+      const task = await tx.task.findFirstOrThrow({
+        where: {
+          id
+        },
+        select: {
+          id: true,
+          title: true,
+          projectId: true
+        }
+      })
+
+      const comment = await tx.taskComment.create({
+        data: {
+          content: dto.content,
+          task: {
+            connect: {
+              id
+            }
+          },
+          createdBy: {
+            connect: {
+              id: user.userEntityId
+            }
+          }
+        }
+      })
+
+      await this.changeLogService.createLog(task.projectId, { entityId: task.id, entityName: task.title, entityType: EntityTypeEnum.TASK, changeType: ChangeTypeEnum.UPDATE, newState: { comment } }, user)
+
+      return tx.task.findFirstOrThrow({
+        where: {
+          id
+        },
+        include: TASK_BOARD_COLUMN_INCLUDES
+      })
+    })
+
+    return task
+  }
+
 
   async listenToDeleteUserWorksheetTaskTopic(user: IJwtPayload, id: number) {
     return this.database.task.update({

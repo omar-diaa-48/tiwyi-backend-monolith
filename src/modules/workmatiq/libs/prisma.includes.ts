@@ -27,7 +27,18 @@ export const TASK_BOARD_COLUMN_INCLUDES = {
 } as const
 
 export const TASK_BOARD_CARD_INCLUDES = {
-    taskComments: true,
+    taskComments: {
+        select: {
+            id: true,
+            content: true,
+            createdBy: {
+                select: {
+                    userId: true,
+                    name: true
+                }
+            }
+        },
+    },
     taskMembers: {
         include: {
             member: true
