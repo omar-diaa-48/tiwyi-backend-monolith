@@ -178,6 +178,7 @@ export class WorkmatiqMsService {
       include: {
         worksheets: {
           select: {
+            id: true,
             title: true,
             tasks: {
               include: TASK_BOARD_COLUMN_INCLUDES,
