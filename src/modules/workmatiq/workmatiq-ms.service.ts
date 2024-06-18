@@ -177,7 +177,8 @@ export class WorkmatiqMsService {
       },
       include: {
         worksheets: {
-          include: {
+          select: {
+            title: true,
             tasks: {
               include: TASK_BOARD_COLUMN_INCLUDES,
               where: {
