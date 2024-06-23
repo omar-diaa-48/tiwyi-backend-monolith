@@ -25,12 +25,6 @@ export class CalendarEvent {
 
     @Prop({
         default: '* * * * * *',
-        validate: {
-            validator: (value: string) => {
-                return value.split(' ').length === 6;
-            },
-            message: 'Invalid cron expression'
-        }
     })
     schema: string
 }
