@@ -130,4 +130,13 @@ export class WorkmatiqMsController {
   ) {
     return this.service.listenToDeleteUserWorksheetTaskTopic(user, id);
   }
+
+  @Patch('calendar-events')
+  @UseGuards(CustomAuthGuard)
+  listenToReadCalendarEventsTopic(
+    @GetUser() user: IJwtPayload,
+    @Body() dto: any
+  ) {
+    return this.service.listenToReadCalendarEventsTopic(user, dto);
+  }
 }

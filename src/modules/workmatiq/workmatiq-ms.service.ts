@@ -6,6 +6,7 @@ import { ExtendedProject, ExtendedTask } from "prisma/types"
 import { IJwtPayload } from "src/interfaces"
 import { ICreateUserCorporateTopic } from "src/interfaces/kafka-topics/hr"
 import { PayloadType } from "src/interfaces/topic.interface"
+import { CalendarEventService } from "../calendar/calendar-event.service"
 import { ChangeLogService } from "../change-log/change-log.service"
 import { ChangeTypeEnum } from "../change-log/libs/change-type.enum"
 import { EntityTypeEnum } from "../change-log/libs/entity-type.enum"
@@ -21,6 +22,7 @@ export class WorkmatiqMsService {
     private configService: ConfigService,
     private storageService: StorageService,
     private changeLogService: ChangeLogService,
+    private calendarEventService: CalendarEventService,
 
     private projectPreferenceService: ProjectPreferenceService,
   ) { }
@@ -526,6 +528,10 @@ export class WorkmatiqMsService {
         isArchived: true
       }
     })
+  }
+
+  async listenToReadCalendarEventsTopic(user: IJwtPayload, dto: any) {
+    return this.calendarEventService.getEvents(user, dto)
   }
 
   async hydrateTask(taskId: number, data?: { members?: Array<Member>, projectTags?: Array<ProjectTag> }, tx?: Omit<PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">) {
