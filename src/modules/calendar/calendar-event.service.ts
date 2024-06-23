@@ -41,6 +41,7 @@ export class CalendarEventService {
         // This function builds a regex to match schema strings
         // that have "*" or a specific value in the second part (month).
         // It covers patterns like "* * month * * *", "year month day * * *", "year month day hour minute second".
-        return new RegExp(`^(\\*|${year}) (\\*|${month}) (\\*|\d{1,2}) (\\*|\d{1,2}) (\\*|\d{1,2}) (\\*|\d{1,2})$`);
+        return new RegExp(`^(${year}|\\*) (${month}|\\*) ([1-9]|1[0-9]|2[0-9]|3[01]|\\*) ([0-9]|1[0-9]|2[0-3]|\\*) ([0-5]?[0-9]|\\*) ([0-5]?[0-9]|\\*)$`);
+        // return new RegExp(`^(\d{4}|\\*) ([1-9]|1[0-2]|\\*) ([1-9]|1[0-9]|2[0-9]|3[01]|\\*) ([0-9]|1[0-9]|2[0-3]|\\*) ([0-5]?[0-9]|\\*) ([0-5]?[0-9]|\\*)$`);
     };
 }
