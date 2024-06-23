@@ -370,6 +370,8 @@ export class WorkmatiqMsService {
           workspaceId: worksheet.workspaceId,
           projectId: worksheet.workspace.projectId,
           createdById: user.userEntityId,
+          dueDate: dto.dueDate,
+          priority: dto.priority,
         },
       })
 

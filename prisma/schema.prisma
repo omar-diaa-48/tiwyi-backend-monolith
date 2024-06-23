@@ -421,6 +421,8 @@ model Task {
   taskMembers     TaskMember[]
   taskComments    TaskComment[]
   taskAttachments TaskAttachment[]
+  dueDate         DateTime?        @default(now())
+  priority        Priority         @default(MEDIUM)
 
   dependentTasks Task[]    @relation("DependentTasks")
   childTasks     Task[]    @relation("ChildTasks")
@@ -484,6 +486,13 @@ enum Currency {
 enum TeamType {
   CUSTOM
   DEFAULT
+  SETTINGS
+}
+
+enum Priority {
+  HIGH
+  MEDIUM
+  LOW
   SETTINGS
 }
 
