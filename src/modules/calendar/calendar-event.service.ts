@@ -6,6 +6,9 @@ import { CalendarEvent } from 'src/modules/database/mongodb/schemas/calendar-eve
 
 @Injectable()
 export class CalendarEventService {
+    DEFAULT_YEAR = "\d{4}"
+    DEFAULT_MONTH = "[1-9]|1[0-2]"
+
     constructor(
         @InjectModel(CalendarEvent.name) private readonly calendarEventModel: Model<CalendarEvent>,
     ) { }
@@ -37,7 +40,20 @@ export class CalendarEventService {
         });
     }
 
-    buildSchemaRegex(year: string, month: string) {
+    createEvent(user: IJwtPayload, dto: any): Promise<CalendarEvent> {
+        const isValidSchema = this.buildSchemaRegex(this.DEFAULT_YEAR, this.DEFAULT_MONTH);
+
+        if (!isValidSchema.test(dto.schema)) {
+            throw new Error('Invalid event schema');
+        }
+
+        return this.calendarEventModel.create({
+            ...dto,
+            createdBy: user
+        });
+    }
+
+    buildSchemaRegex(year?: string, month?: string) {
         // This function builds a regex to match schema strings
         // that have "*" or a specific value in the second part (month).
         // It covers patterns like "* * month * * *", "year month day * * *", "year month day hour minute second".

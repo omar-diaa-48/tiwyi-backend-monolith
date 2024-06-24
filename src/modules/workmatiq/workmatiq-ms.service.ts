@@ -534,6 +534,10 @@ export class WorkmatiqMsService {
     return this.calendarEventService.getEvents(user, dto)
   }
 
+  async listenToCreateCalendarEventTopic(user: IJwtPayload, dto: any) {
+    return this.calendarEventService.createEvent(user, dto)
+  }
+
   async hydrateTask(taskId: number, data?: { members?: Array<Member>, projectTags?: Array<ProjectTag> }, tx?: Omit<PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">) {
     if (!tx) {
       tx = this.database;

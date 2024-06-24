@@ -139,4 +139,13 @@ export class WorkmatiqMsController {
   ) {
     return this.service.listenToReadCalendarEventsTopic(user, dto);
   }
+
+  @Post('calendar-events')
+  @UseGuards(CustomAuthGuard)
+  listenToCreateCalendarEventTopic(
+    @GetUser() user: IJwtPayload,
+    @Body() dto: any
+  ) {
+    return this.service.listenToCreateCalendarEventTopic(user, dto);
+  }
 }
