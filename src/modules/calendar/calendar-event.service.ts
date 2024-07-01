@@ -22,7 +22,7 @@ export class CalendarEventService {
             $and: [
                 {
                     $or: [
-                        { 'createdBy.id': user.userEntityId },
+                        { 'createdBy.userEntityId': user.userEntityId },
                         {
                             attendees: {
                                 $in: [user.userEntityId]
@@ -31,7 +31,7 @@ export class CalendarEventService {
                     ]
                 },
                 {
-                    schema: {
+                    start: {
                         $regex: schema
                     }
                 },
@@ -41,9 +41,9 @@ export class CalendarEventService {
     }
 
     createEvent(user: IJwtPayload, dto: any): Promise<CalendarEvent> {
-        const isValidSchema = this.buildSchemaRegex(this.DEFAULT_YEAR_REGEX, this.DEFAULT_MONTH_REGEX);
+        const validSchema = this.buildSchemaRegex(this.DEFAULT_YEAR_REGEX, this.DEFAULT_MONTH_REGEX);
 
-        if (!isValidSchema.test(dto.schema)) {
+        if (!validSchema.test(dto.start) || !validSchema.test(dto.end)) {
             throw new Error('Invalid event schema');
         }
 

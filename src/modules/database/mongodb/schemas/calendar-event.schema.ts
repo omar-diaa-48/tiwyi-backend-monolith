@@ -25,14 +25,13 @@ export class CalendarEvent {
 
     @Prop({
         default: '* * * * * *',
-        validate: {
-            validator: (value: string) => {
-                return value.split(' ').length - 1 === 5;
-            },
-            message: 'Invalid Event schema'
-        }
     })
-    schema: string
+    start: string
+
+    @Prop({
+        default: '* * * * * *'
+    })
+    end: string
 }
 
 export const CalendarEventSchema = SchemaFactory.createForClass(CalendarEvent);
